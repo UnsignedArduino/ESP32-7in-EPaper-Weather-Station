@@ -1,56 +1,49 @@
-#include <Arduino.h>
 /* Includes ------------------------------------------------------------------*/
 #include "DEV_Config.h"
 #include "EPD.h"
 #include "GUI_Paint.h"
-#include "ImageData.h"
+#include "imagedata.h"
 #include <stdlib.h>
 
-/* Entry point
- * ----------------------------------------------------------------*/
-void setup() {
-  Serial.begin(115200);
-  Serial.print("EPD_7IN5_V2_test Demo\r\n");
+/* Entry point ----------------------------------------------------------------*/
+void setup()
+{
+  printf("EPD_5IN83_V2_test Demo\r\n");
   DEV_Module_Init();
 
-  Serial.print("e-Paper Init and Clear...\r\n");
-  EPD_7IN5_V2_Init();
-  EPD_7IN5_V2_Clear();
+  printf("e-Paper Init and Clear...\r\n");
+  EPD_5IN83_V2_Init();
+  EPD_5IN83_V2_Clear();
   DEV_Delay_ms(500);
 
-  // Create a new image cache
-  UBYTE* BlackImage;
-  /* you have to edit the startup_stm32fxxx.s file and set a big enough heap
-   * size */
-  UWORD Imagesize =
-      ((EPD_7IN5_V2_WIDTH % 8 == 0) ? (EPD_7IN5_V2_WIDTH / 8)
-                                    : (EPD_7IN5_V2_WIDTH / 8 + 1)) *
-      EPD_7IN5_V2_HEIGHT;
-  if ((BlackImage = (UBYTE*)malloc(Imagesize)) == NULL) {
-    Serial.print("Failed to apply for black memory...\r\n");
-    while (1)
-      ;
+  //Create a new image cache
+  UBYTE *BlackImage;
+  /* you have to edit the startup_stm32fxxx.s file and set a big enough heap size */
+  UWORD Imagesize = ((EPD_5IN83_V2_WIDTH % 8 == 0) ? (EPD_5IN83_V2_WIDTH / 8 ) : (EPD_5IN83_V2_WIDTH / 8 + 1)) * EPD_5IN83_V2_HEIGHT;
+  if ((BlackImage = (UBYTE *)malloc(Imagesize)) == NULL) {
+    printf("Failed to apply for black memory...\r\n");
+    while(1);
   }
-  Serial.print("Paint_NewImage\r\n");
-  Paint_NewImage(BlackImage, EPD_7IN5_V2_WIDTH, EPD_7IN5_V2_HEIGHT, 0, WHITE);
+  printf("Paint_NewImage\r\n");
+  Paint_NewImage(BlackImage, EPD_5IN83_V2_WIDTH, EPD_5IN83_V2_HEIGHT, 180, WHITE);
 
-#if 1 // show image for array
-  Serial.print("show image for array\r\n");
+#if 1   // show image for array   
+  printf("show image for array\r\n");
   Paint_SelectImage(BlackImage);
   Paint_Clear(WHITE);
-  Paint_DrawBitMap(gImage_7in5_V2);
-  EPD_7IN5_V2_Display(BlackImage);
-  DEV_Delay_ms(2000);
+  Paint_DrawBitMap(gImage_5in83_V2);
+  EPD_5IN83_V2_Display(BlackImage);
+  DEV_Delay_ms(500);
 #endif
 
-#if 1 // Drawing on the image
-  // 1.Select Image
-  Serial.print("SelectImage:BlackImage\r\n");
+#if 1   // Drawing on the image
+  //1.Select Image
+  printf("SelectImage:BlackImage\r\n");
   Paint_SelectImage(BlackImage);
   Paint_Clear(WHITE);
 
   // 2.Drawing on the image
-  Serial.print("Drawing:BlackImage\r\n");
+  printf("Drawing:BlackImage\r\n");
   Paint_DrawPoint(10, 80, BLACK, DOT_PIXEL_1X1, DOT_STYLE_DFT);
   Paint_DrawPoint(10, 90, BLACK, DOT_PIXEL_2X2, DOT_STYLE_DFT);
   Paint_DrawPoint(10, 100, BLACK, DOT_PIXEL_3X3, DOT_STYLE_DFT);
@@ -69,21 +62,22 @@ void setup() {
   Paint_DrawString_CN(130, 0, " 你好abc", &Font12CN, BLACK, WHITE);
   Paint_DrawString_CN(130, 20, "微雪电子", &Font24CN, WHITE, BLACK);
 
-  Serial.print("EPD_Display\r\n");
-  EPD_7IN5_V2_Display(BlackImage);
+  printf("EPD_Display\r\n");
+  EPD_5IN83_V2_Display(BlackImage);
   DEV_Delay_ms(2000);
 #endif
 
-  Serial.print("Clear...\r\n");
-  EPD_7IN5_V2_Clear();
+  printf("Clear...\r\n");
+  EPD_5IN83_V2_Clear();
 
-  Serial.print("Goto Sleep...\r\n");
-  EPD_7IN5_V2_Sleep();
+  printf("Goto Sleep...\r\n");
+  EPD_5IN83_V2_Sleep();
   free(BlackImage);
   BlackImage = NULL;
 }
 
 /* The main loop -------------------------------------------------------------*/
-void loop() {
+void loop()
+{
   //
 }
