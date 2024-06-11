@@ -1,3 +1,4 @@
+#include "settings.h"
 #include "wifiConnection.h"
 #include <Arduino.h>
 
@@ -8,6 +9,9 @@ void setup() {
 
   Serial.printf("Efuse MAC: 0x%012llX\n", ESP.getEfuseMac());
 
+  loadSettings();
+  printSettings();
+  // resetWiFiSettings();
   connectToWiFi();
 }
 

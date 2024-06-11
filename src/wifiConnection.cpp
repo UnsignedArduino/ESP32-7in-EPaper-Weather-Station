@@ -1,79 +1,83 @@
 #include "wifiConnection.h"
 
-// @todo Fix inputs that should be hidden not hiding
-// @todo Add saving via preferences
+void generateHTMLForSelect(char* dest, size_t destSize, const char* label,
+                           const char* injectID, const char* targetHiddenID,
+                           const char* options[], const char* optionLabels[],
+                           size_t optionsSize, const char* selectedValue) {
+  snprintf(dest, destSize,
+           "<label for=\"%s\">%s:</label><select name=\"%s\" "
+           "id=\"%s\" onchange=\"document.getElementById('%s').value = "
+           "this.value\">",
+           injectID, label, injectID, injectID, targetHiddenID);
+  for (size_t i = 0; i < optionsSize; i++) {
+    snprintf(dest + strlen(dest), destSize - strlen(dest),
+             "<option value=\"%s\"%s>%s</option>", options[i],
+             strcmp(options[i], selectedValue) == 0 ? " selected" : "",
+             optionLabels[i]);
+  }
+  snprintf(dest + strlen(dest), destSize - strlen(dest),
+           "</select>"
+           "<script type=\"module\">"
+           "setTimeout(() => {"
+           "document.getElementById(\"%s\").hidden = true;"
+           "document.querySelector(\"[for='%s']\").hidden = true;"
+           // clang-format off
+           "document.getElementById(\"%s\").value = document.getElementById(\"%s\").value;"
+           // clang-format on
+           "});"
+           "</script>",
+           targetHiddenID, targetHiddenID, targetHiddenID, injectID);
+}
+
+int8_t resetWiFiSettings() {
+  Serial.println("Resetting settings");
+  WiFiManager wm;
+  wm.resetSettings();
+  return 0;
+}
+
 int8_t connectToWiFi() {
   Serial.println("Connecting to WiFi");
   WiFiManager wm;
 
-  Serial.println("Resetting settings");
-  wm.resetSettings();
-
-  WiFiManagerParameter customCityOrPostalCode("cityOrPostalCode",
-                                              "City or postal code", "", 32);
+  WiFiManagerParameter customCityOrPostalCode(
+      "cityOrPostalCode", "City or postal code", cityOrPostalCodeSetting, 32);
   wm.addParameter(&customCityOrPostalCode);
 
-  const char* customTempUnitHTML = R"(
-    <label for="tempUnitInjectID">Temperature unit:</label>
-    <select name="tempUnitInjectID" id="tempUnitInjectID" onchange="document.getElementById('tempUnitID').value = this.value">
-      <option value="f">Fahrenheit (f)</option>
-      <option value="c">Celsius (c)</option>
-    </select>
-    <script>
-      setTimeout(() => {
-        document.getElementById("tempUnitID").hidden = true;
-        document.querySelector("[for='tempUnitID']").hidden = true;
-        document.getElementById("tempUnitID").value = document.getElementById("tempUnitInjectID").value;
-      });
-    </script>
-  )";
+  char customTempUnitHTML[1024];
+  generateHTMLForSelect(customTempUnitHTML, sizeof(customTempUnitHTML),
+                        "Temperature unit", "tempUnitInjectID", "tempUnitID",
+                        TEMP_UNITS, TEMP_UNITS_LABELS, MAX_TEMP_UNITS,
+                        tempUnitSetting);
   WiFiManagerParameter customTempUnitInject(customTempUnitHTML);
   wm.addParameter(&customTempUnitInject);
   WiFiManagerParameter customTempUnit(
       "tempUnitID", "Temperature unit: (Should be hidden)", "", 2);
   wm.addParameter(&customTempUnit);
 
-  const char* customWindSpeedUnitHTML = R"(
-    <label for="windSpeedUnitInjectID">Wind speed unit:</label>
-    <select name="windSpeedUnitInjectID" id="windSpeedUnitInjectID" onchange="document.getElementById('windSpeedUnitID').value = this.value">
-      <option value="Kmh">Kilometers per hour (Km/h)</option>
-      <option value="ms">Meters per second (m/s)</option>
-      <option value="mph">Miles per hour (mph)</option>
-      <option value="kn">Knots (kn)</option>
-    </select>
-    <script>
-      setTimeout(() => {
-        document.getElementById("windSpeedUnitID").hidden = true;
-        document.querySelector("[for='windSpeedUnitID']").hidden = true;
-        document.getElementById("windSpeedUnitID").value = document.getElementById("windSpeedUnitInjectID").value;
-      });
-    </script>
-  )";
+  char customWindSpeedUnitHTML[1024];
+  generateHTMLForSelect(customWindSpeedUnitHTML,
+                        sizeof(customWindSpeedUnitHTML), "Wind speed unit",
+                        "windSpeedUnitInjectID", "windSpeedUnitID",
+                        WIND_SPEED_UNITS, WIND_SPEED_UNITS_LABELS,
+                        MAX_WIND_SPEED_UNITS, windSpeedUnitSetting);
   WiFiManagerParameter customWindSpeedUnitInject(customWindSpeedUnitHTML);
   wm.addParameter(&customWindSpeedUnitInject);
   WiFiManagerParameter customWindSpeedUnit(
       "windSpeedUnitID", "Wind speed unit: (Should be hidden)", "", 4);
   wm.addParameter(&customWindSpeedUnit);
 
-  const char* customPrecipitationUnitHTML = R"(
-    <label for="precipitationUnitInjectID">Temperature unit:</label>
-    <select name="precipitationUnitInjectID" id="precipitationUnitInjectID" onchange="document.getElementById('precipitationUnitID').value = this.value">
-      <option value="mm">Millimeter (mm)</option>
-      <option value="in">Inch (in)</option>
-    </select>
-    <script>
-      setTimeout(() => {
-        document.getElementById("precipitationUnitID").hidden = true;
-        document.querySelector("[for='precipitationUnitID']").hidden = true;
-        document.getElementById("precipitationUnitID").value = document.getElementById("precipitationUnitInjectID").value;
-      });
-    </script>
-  )";
+  char customPrecipitationUnitHTML[1024];
+  generateHTMLForSelect(
+      customPrecipitationUnitHTML, sizeof(customPrecipitationUnitHTML),
+      "Precipitation unit", "precipitationUnitInjectID", "precipitationUnitID",
+      PRECIPITATION_UNITS, PRECIPITATION_UNITS_LABELS, MAX_PRECIPITATION_UNITS,
+      precipitationUnitSetting);
   WiFiManagerParameter customPrecipitationUnitInject(
       customPrecipitationUnitHTML);
   wm.addParameter(&customPrecipitationUnitInject);
   WiFiManagerParameter customPrecipitationUnit(
-      "precipitationUnitID", "Precipitation unit: (Should be hidden)", "", 2);
+      "precipitationUnitID", "Precipitation unit: (Should be hidden)", "", 3);
   wm.addParameter(&customPrecipitationUnit);
 
   char ssid[32];
@@ -92,17 +96,26 @@ int8_t connectToWiFi() {
   wm.setConnectTimeout(30);
   wm.setConfigPortalTimeoutCallback(
       []() { Serial.println("Configuration portal timed out"); });
+  bool shouldSaveConfig = false;
+  wm.setSaveConfigCallback([&shouldSaveConfig]() { shouldSaveConfig = true; });
 
   const bool res = wm.autoConnect(ssid, password);
   if (res) {
     Serial.println("Connected to WiFi");
 
-    Serial.printf("City or postal code: %s\n",
-                  customCityOrPostalCode.getValue());
-    Serial.printf("Temperature unit: %s\n", customTempUnit.getValue());
-    Serial.printf("Wind speed unit: %s\n", customWindSpeedUnit.getValue());
-    Serial.printf("Precipitation unit: %s\n",
-                  customPrecipitationUnit.getValue());
+    if (shouldSaveConfig) {
+      Serial.println("Saving settings from wifi manager");
+      strncpy(cityOrPostalCodeSetting, customCityOrPostalCode.getValue(),
+              MAX_CITY_OR_POSTAL_CODE_LENGTH);
+      strncpy(tempUnitSetting, customTempUnit.getValue(), MAX_TEMP_UNIT_LENGTH);
+      strncpy(windSpeedUnitSetting, customWindSpeedUnit.getValue(),
+              MAX_WIND_SPEED_UNIT_LENGTH);
+      strncpy(precipitationUnitSetting, customPrecipitationUnit.getValue(),
+              MAX_PRECIPITATION_UNIT_LENGTH);
+      saveSettings();
+      printSettings();
+    }
+
     return 0;
   } else {
     Serial.println("Failed to connect to WiFi");
