@@ -1,4 +1,4 @@
-#include "settings.h"
+#include "Settings.h"
 
 char cityOrPostalCodeSetting[MAX_CITY_OR_POSTAL_CODE_LENGTH] = "";
 

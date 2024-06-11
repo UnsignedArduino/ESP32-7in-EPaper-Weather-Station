@@ -1,4 +1,12 @@
-#include "wifiConnection.h"
+#include "WiFiConnection.h"
+
+namespace {
+  void generateHTMLForSelect(const char* dest, size_t destSize,
+                             const char* label, const char* injectID,
+                             const char* targetHiddenID, const char* options[],
+                             const char* optionLabels[], size_t optionsSize,
+                             const char* selectedValue);
+}
 
 void generateHTMLForSelect(char* dest, size_t destSize, const char* label,
                            const char* injectID, const char* targetHiddenID,

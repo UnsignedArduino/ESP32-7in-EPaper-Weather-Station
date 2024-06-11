@@ -1,5 +1,7 @@
-#include "settings.h"
-#include "wifiConnection.h"
+#include "Settings.h"
+#include "Touch.h"
+#include "WiFiConnection.h"
+#include "pins.h"
 #include <Arduino.h>
 
 void setup() {
@@ -9,15 +11,26 @@ void setup() {
 
   Serial.printf("Efuse MAC: 0x%012llX\n", ESP.getEfuseMac());
 
+  if (isTouched()) {
+    Serial.println("Touch detected, resetting WiFi settings");
+    resetWiFiSettings();
+  }
+
   loadSettings();
   printSettings();
-  // resetWiFiSettings();
   connectToWiFi();
 }
 
 void loop() {
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(500);
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(500);
+  if (isTouched()) {
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(100);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(100);
+  } else {
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(500);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(500);
+  }
 }
