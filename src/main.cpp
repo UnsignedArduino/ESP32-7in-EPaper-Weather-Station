@@ -1,3 +1,4 @@
+#include "Geocoding.h"
 #include "Settings.h"
 #include "Touch.h"
 #include "WiFiConnection.h"
@@ -19,36 +20,12 @@ void setup() {
   loadSettings();
   printSettings();
   connectToWiFi();
+
+  float latitude, longitude;
+  char name[MAX_NAME_SIZE], country[MAX_NAME_SIZE], admin1[MAX_NAME_SIZE],
+      admin2[MAX_NAME_SIZE], admin3[MAX_NAME_SIZE], admin4[MAX_NAME_SIZE];
+  geocode(cityOrPostalCodeSetting, latitude, longitude, name, country, admin1,
+          admin2, admin3, admin4);
 }
 
-void loop() {
-  static uint32_t lastTouchMillis = 0;
-  static uint32_t lastIdleFlashMillis = 0;
-  static bool ledState = false;
-  static bool prevTouchState = false;
-
-  if (isTouched()) {
-    lastTouchMillis = millis();
-  }
-
-  if (isTouched() && !prevTouchState) {
-    Serial.println("Touch detected");
-    prevTouchState = true;
-    digitalWrite(LED_BUILTIN, HIGH);
-    ledState = true;
-  } else if (!isTouched() && prevTouchState) {
-    Serial.println("Touch released");
-    prevTouchState = false;
-    digitalWrite(LED_BUILTIN, LOW);
-    ledState = false;
-  }
-
-  if (millis() - lastTouchMillis > 1000 &&
-      millis() - lastIdleFlashMillis > 500) {
-    digitalWrite(LED_BUILTIN, ledState ? LOW : HIGH);
-    ledState = !ledState;
-    lastIdleFlashMillis = millis();
-  }
-
-  delay(10);
-}
+void loop() {}
