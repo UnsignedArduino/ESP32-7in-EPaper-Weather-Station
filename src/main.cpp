@@ -75,9 +75,6 @@ void setup() {
 
   display.display(false);
 
-  display.fillScreen(GxEPD_WHITE);
-  display.display(false);
-
   displayEnd();
 
   const uint32_t timeFinishDisplay = millis();
