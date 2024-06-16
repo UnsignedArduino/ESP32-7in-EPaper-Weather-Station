@@ -1,10 +1,10 @@
 #include "Geocoding.h"
 
-int8_t geocode(char cityOrPostalCode[MAX_CITY_OR_POSTAL_CODE_LENGTH],
-               float& latitude, float& longitude, char name[MAX_NAME_SIZE],
-               char country[MAX_NAME_SIZE], char admin1[MAX_NAME_SIZE],
-               char admin2[MAX_NAME_SIZE], char admin3[MAX_NAME_SIZE],
-               char admin4[MAX_NAME_SIZE]) {
+int8_t getGeocode(char cityOrPostalCode[MAX_CITY_OR_POSTAL_CODE_LENGTH],
+                  float& latitude, float& longitude, char name[MAX_NAME_SIZE],
+                  char country[MAX_NAME_SIZE], char admin1[MAX_NAME_SIZE],
+                  char admin2[MAX_NAME_SIZE], char admin3[MAX_NAME_SIZE],
+                  char admin4[MAX_NAME_SIZE]) {
   Serial.printf("Geocoding for %s\n", cityOrPostalCode);
   latitude = 0.0;
   longitude = 0.0;
