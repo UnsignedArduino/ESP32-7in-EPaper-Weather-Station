@@ -1,3 +1,4 @@
+// #include "7in5WaveshareEPaper.h"
 #include "Geocoding.h"
 #include "Settings.h"
 #include "Touch.h"
@@ -17,6 +18,7 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
 
+  // displayBegin();
   display.init(115200, true, 2, false);
   display.setRotation(0);
   display.setFont(&FreeMono9pt7b);
@@ -49,15 +51,18 @@ void setup() {
 
   const uint32_t timeFinishDataFetch = millis();
 
+  display.fillScreen(GxEPD_WHITE);
+  display.display(false);
+
+  // displayEnd();
+  display.hibernate();
+
+  const uint32_t timeFinishDisplay = millis();
+
   Serial.println("Timings:");
   Serial.printf("  WiFi connect finished at ms %lu\n", timeFinishWiFiConnect);
   Serial.printf("  Data fetch finished at ms %lu\n", timeFinishDataFetch);
-
-  display.setCursor(0, 10);
-  display.println("Hello, world!");
-
-  display.display(false);
-  display.hibernate();
+  Serial.printf("  Display finished at ms %lu\n", timeFinishDisplay);
 }
 
 void loop() {}
