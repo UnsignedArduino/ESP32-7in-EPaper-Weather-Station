@@ -17,6 +17,13 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
 
+  display.init(115200, true, 2, false);
+  display.setRotation(0);
+  display.setFont(&FreeMono9pt7b);
+  display.setTextColor(GxEPD_BLACK);
+  display.setFullWindow();
+  display.fillScreen(GxEPD_WHITE);
+
   // Weird deep sleep bug workaround
   delay(500);
 
@@ -45,13 +52,6 @@ void setup() {
   Serial.println("Timings:");
   Serial.printf("  WiFi connect finished at ms %lu\n", timeFinishWiFiConnect);
   Serial.printf("  Data fetch finished at ms %lu\n", timeFinishDataFetch);
-
-  display.init(115200, true, 2, false);
-  display.setRotation(0);
-  display.setFont(&FreeMono9pt7b);
-  display.setTextColor(GxEPD_BLACK);
-  display.setFullWindow();
-  display.fillScreen(GxEPD_WHITE);
 
   display.setCursor(0, 10);
   display.println("Hello, world!");
