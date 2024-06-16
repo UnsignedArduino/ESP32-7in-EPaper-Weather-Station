@@ -1,4 +1,3 @@
-// #include "7in5WaveshareEPaper.h"
 #include "Geocoding.h"
 #include "Settings.h"
 #include "Touch.h"
@@ -13,18 +12,25 @@
 #include <GxEPD2_BW.h>
 #include <GxEPD2_display_selection_new_style.h>
 
-void setup() {
-  Serial.begin(115200);
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, LOW);
-
-  // displayBegin();
+void displayBegin() {
   display.init(115200, true, 2, false);
   display.setRotation(0);
   display.setFont(&FreeMono9pt7b);
   display.setTextColor(GxEPD_BLACK);
   display.setFullWindow();
   display.fillScreen(GxEPD_WHITE);
+}
+
+void displayEnd() {
+  display.hibernate();
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
+
+  displayBegin();
 
   // Weird deep sleep bug workaround
   delay(500);
@@ -54,8 +60,7 @@ void setup() {
   display.fillScreen(GxEPD_WHITE);
   display.display(false);
 
-  // displayEnd();
-  display.hibernate();
+  displayEnd();
 
   const uint32_t timeFinishDisplay = millis();
 
