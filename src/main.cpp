@@ -25,12 +25,20 @@ void setup() {
   printSettings();
   connectToWiFi();
 
+  const uint32_t timeFinishWiFiConnect = millis();
+
   GeocodeData geocodeData;
   getGeocode(cityOrPostalCodeSetting, geocodeData);
 
   WeatherData weatherData;
   int8_t result =
       getWeather(geocodeData.latitude, geocodeData.longitude, weatherData);
+  
+  const uint32_t timeFinishDataFetch = millis();
+
+  Serial.println("Timings:");
+  Serial.printf("  WiFi connect finished at ms %lu\n", timeFinishWiFiConnect);
+  Serial.printf("  Data fetch finished at ms %lu\n", timeFinishDataFetch);
 }
 
 void loop() {}
