@@ -61,8 +61,8 @@ bool loadSettings() {
 
 void printSettings() {
   Serial.println("Weather station settings:");
-  Serial.printf("City or postal code: %s\n", cityOrPostalCodeSetting);
-  Serial.printf("Temperature unit: %s\n", tempUnitSetting);
-  Serial.printf("Wind speed unit: %s\n", windSpeedUnitSetting);
-  Serial.printf("Precipitation unit: %s\n", precipitationUnitSetting);
+  Serial.printf("  City or postal code: %s\n", cityOrPostalCodeSetting);
+  Serial.printf("  Temperature unit: %s\n", tempUnitSetting);
+  Serial.printf("  Wind speed unit: %s\n", windSpeedUnitSetting);
+  Serial.printf("  Precipitation unit: %s\n", precipitationUnitSetting);
 }

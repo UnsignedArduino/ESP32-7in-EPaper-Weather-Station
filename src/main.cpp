@@ -11,6 +11,9 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
 
+  // Weird deep sleep bug workaround
+  delay(500);
+
   Serial.printf("Efuse MAC: 0x%012llX\n", ESP.getEfuseMac());
 
   if (isTouched()) {
@@ -22,14 +25,12 @@ void setup() {
   printSettings();
   connectToWiFi();
 
-  float latitude, longitude;
-  char name[MAX_NAME_SIZE], country[MAX_NAME_SIZE], admin1[MAX_NAME_SIZE],
-      admin2[MAX_NAME_SIZE], admin3[MAX_NAME_SIZE], admin4[MAX_NAME_SIZE];
-  getGeocode(cityOrPostalCodeSetting, latitude, longitude, name, country,
-             admin1, admin2, admin3, admin4);
+  GeocodeData geocodeData;
+  getGeocode(cityOrPostalCodeSetting, geocodeData);
 
-  WeatherData data;
-  int8_t result = getWeather(latitude, longitude, data);
+  WeatherData weatherData;
+  int8_t result =
+      getWeather(geocodeData.latitude, geocodeData.longitude, weatherData);
 }
 
 void loop() {}

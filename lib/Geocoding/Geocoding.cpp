@@ -1,32 +1,39 @@
 #include "Geocoding.h"
 
+void printGeocode(GeocodeData& data) {
+  Serial.printf("Geocode:\n");
+  Serial.printf("  Latitude: %f\n", data.latitude);
+  Serial.printf("  Longitude: %f\n", data.longitude);
+  Serial.printf("  Name: %s\n", data.name);
+  Serial.printf("  Country: %s\n", data.country);
+  Serial.printf("  Admin1: %s\n", data.admin1);
+  Serial.printf("  Admin2: %s\n", data.admin2);
+  Serial.printf("  Admin3: %s\n", data.admin3);
+  Serial.printf("  Admin4: %s\n", data.admin4);
+}
+
 int8_t getGeocode(char cityOrPostalCode[MAX_CITY_OR_POSTAL_CODE_LENGTH],
-                  float& latitude, float& longitude, char name[MAX_NAME_SIZE],
-                  char country[MAX_NAME_SIZE], char admin1[MAX_NAME_SIZE],
-                  char admin2[MAX_NAME_SIZE], char admin3[MAX_NAME_SIZE],
-                  char admin4[MAX_NAME_SIZE]) {
+                  GeocodeData& data) {
   Serial.printf("Geocoding for %s\n", cityOrPostalCode);
-  latitude = 0.0;
-  longitude = 0.0;
+  data.latitude = 0.0;
+  data.longitude = 0.0;
 
   Serial.println("Checking cache");
   Preferences preferences;
   preferences.begin("geocodeCache");
   if (strcmp(cityOrPostalCode, preferences.getString("lastCode", "").c_str()) ==
       0) {
-    latitude = preferences.getFloat("latitude", 0.0);
-    longitude = preferences.getFloat("longitude", 0.0);
-    strcpy(name, preferences.getString("name", "").c_str());
-    strcpy(country, preferences.getString("country", "").c_str());
-    strcpy(admin1, preferences.getString("admin1", "").c_str());
-    strcpy(admin2, preferences.getString("admin2", "").c_str());
-    strcpy(admin3, preferences.getString("admin3", "").c_str());
-    strcpy(admin4, preferences.getString("admin4", "").c_str());
+    data.latitude = preferences.getFloat("latitude", 0.0);
+    data.longitude = preferences.getFloat("longitude", 0.0);
+    strcpy(data.name, preferences.getString("name", "").c_str());
+    strcpy(data.country, preferences.getString("country", "").c_str());
+    strcpy(data.admin1, preferences.getString("admin1", "").c_str());
+    strcpy(data.admin2, preferences.getString("admin2", "").c_str());
+    strcpy(data.admin3, preferences.getString("admin3", "").c_str());
+    strcpy(data.admin4, preferences.getString("admin4", "").c_str());
     preferences.end();
-    Serial.printf(
-        "Cache hit\nLatitude: %f\nLongitude: %f\nName: "
-        "%s\nCountry: %s\nAdmin1: %s\nAdmin2: %s\nAdmin3: %s\nAdmin4: %s\n",
-        latitude, longitude, name, country, admin1, admin2, admin3, admin4);
+    Serial.println("Cache hit");
+    printGeocode(data);
     return GET_COORDINATE_SUCCESS_CACHE;
   }
 
@@ -68,23 +75,23 @@ int8_t getGeocode(char cityOrPostalCode[MAX_CITY_OR_POSTAL_CODE_LENGTH],
 
   JsonObject result = doc["results"][0];
 
-  latitude = result["latitude"];
-  longitude = result["longitude"];
-  strcpy(name, result["name"]);
+  data.latitude = result["latitude"];
+  data.longitude = result["longitude"];
+  strcpy(data.name, result["name"]);
   if (result.containsKey("country")) {
-    strcpy(country, result["country"]);
+    strcpy(data.country, result["country"]);
   }
   if (result.containsKey("admin1")) {
-    strcpy(admin1, result["admin1"]);
+    strcpy(data.admin1, result["admin1"]);
   }
   if (result.containsKey("admin2")) {
-    strcpy(admin2, result["admin2"]);
+    strcpy(data.admin2, result["admin2"]);
   }
   if (result.containsKey("admin3")) {
-    strcpy(admin3, result["admin3"]);
+    strcpy(data.admin3, result["admin3"]);
   }
   if (result.containsKey("admin4")) {
-    strcpy(admin4, result["admin4"]);
+    strcpy(data.admin4, result["admin4"]);
   }
 
   Serial.println("Done");
@@ -92,20 +99,18 @@ int8_t getGeocode(char cityOrPostalCode[MAX_CITY_OR_POSTAL_CODE_LENGTH],
 
   Serial.println("Caching geocoding result");
   preferences.putString("lastCode", cityOrPostalCode);
-  preferences.putFloat("latitude", latitude);
-  preferences.putFloat("longitude", longitude);
-  preferences.putString("name", name);
-  preferences.putString("country", country);
-  preferences.putString("admin1", admin1);
-  preferences.putString("admin2", admin2);
-  preferences.putString("admin3", admin3);
-  preferences.putString("admin4", admin4);
+  preferences.putFloat("latitude", data.latitude);
+  preferences.putFloat("longitude", data.longitude);
+  preferences.putString("name", data.name);
+  preferences.putString("country", data.country);
+  preferences.putString("admin1", data.admin1);
+  preferences.putString("admin2", data.admin2);
+  preferences.putString("admin3", data.admin3);
+  preferences.putString("admin4", data.admin4);
   preferences.end();
 
-  Serial.printf(
-      "Geocoding fetched\nLatitude: %f\nLongitude: %f\nName: "
-      "%s\nCountry: %s\nAdmin1: %s\nAdmin2: %s\nAdmin3: %s\nAdmin4: %s\n",
-      latitude, longitude, name, country, admin1, admin2, admin3, admin4);
+  Serial.println("Geocoding complete");
+  printGeocode(data);
 
   return GET_COORDINATE_SUCCESS;
 }
