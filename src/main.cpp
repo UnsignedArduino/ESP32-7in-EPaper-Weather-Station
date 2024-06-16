@@ -33,6 +33,27 @@ void displayEnd() {
   display.hibernate();
 }
 
+void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
+  display.fillScreen(GxEPD_WHITE);
+
+  u8g2.setFont(u8g2_font_9x18_mf);
+
+  u8g2.setCursor(0, 10);
+  u8g2.print(geoData.name);
+  char* locationParts[] = {geoData.name,   geoData.admin4, geoData.admin3,
+                           geoData.admin2, geoData.admin1, geoData.country};
+  for (uint8_t i = 1; i < (sizeof(locationParts) / sizeof(locationParts[0]));
+       i++) {
+    if (strlen(locationParts[i]) > 0 &&
+        strcasestr(locationParts[i], locationParts[i - 1]) == NULL) {
+      u8g2.print(", ");
+      u8g2.print(locationParts[i]);
+    }
+  }
+
+  display.display(false);
+}
+
 void setup() {
   Serial.begin(115200);
   pinMode(LED_BUILTIN, OUTPUT);
@@ -65,15 +86,7 @@ void setup() {
 
   const uint32_t timeFinishDataFetch = millis();
 
-  u8g2.setFont(u8g2_font_9x18_mf);
-  u8g2.setCursor(0, 10);
-  u8g2.println("Hello, world!");
-
-  u8g2.setCursor(0, 200);
-  u8g2.setFont(u8g2_font_wqy16_t_gb2312);
-  u8g2.println("你好，世界！");
-
-  display.display(false);
+  displayWeather(geocodeData, weatherData);
 
   displayEnd();
 
