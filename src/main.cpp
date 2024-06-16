@@ -4,7 +4,13 @@
 #include "Weather.h"
 #include "WiFiConnection.h"
 #include "pins.h"
+#include <Adafruit_EPD.h>
+#include <Adafruit_GFX.h>
 #include <Arduino.h>
+#include <Fonts/FreeMono9pt7b.h>
+#include <Fonts/FreeMonoBold9pt7b.h>
+#include <GxEPD2_BW.h>
+#include <GxEPD2_display_selection_new_style.h>
 
 void setup() {
   Serial.begin(115200);
@@ -33,12 +39,25 @@ void setup() {
   WeatherData weatherData;
   int8_t result =
       getWeather(geocodeData.latitude, geocodeData.longitude, weatherData);
-  
+
   const uint32_t timeFinishDataFetch = millis();
 
   Serial.println("Timings:");
   Serial.printf("  WiFi connect finished at ms %lu\n", timeFinishWiFiConnect);
   Serial.printf("  Data fetch finished at ms %lu\n", timeFinishDataFetch);
+
+  display.init(115200, true, 2, false);
+  display.setRotation(0);
+  display.setFont(&FreeMono9pt7b);
+  display.setTextColor(GxEPD_BLACK);
+  display.setFullWindow();
+  display.fillScreen(GxEPD_WHITE);
+
+  display.setCursor(0, 10);
+  display.println("Hello, world!");
+
+  display.display(false);
+  display.hibernate();
 }
 
 void loop() {}
