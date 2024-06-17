@@ -30,6 +30,12 @@ const char* PRECIPITATION_UNITS_LABELS[MAX_PRECIPITATION_UNITS] = {
     "Millimeter (mm)", "Inch (in)"};
 char precipitationUnitSetting[MAX_PRECIPITATION_UNIT_LENGTH] = "mm";
 
+const char* LANGUAGE_EN = "en";
+const char* LANGUAGE_CN = "cn";
+const char* LANGUAGES[MAX_LANGUAGES] = {LANGUAGE_EN, LANGUAGE_CN};
+const char* LANGUAGES_LABELS[MAX_LANGUAGES] = {"English (en)", "Chinese (cn)"};
+char languageSetting[MAX_LANGUAGE_LENGTH] = "en";
+
 bool saveSettings() {
   Serial.println("Saving settings to preferences");
   Preferences preferences;
@@ -38,6 +44,7 @@ bool saveSettings() {
   preferences.putString("tempUnit", tempUnitSetting);
   preferences.putString("windSpeedUnit", windSpeedUnitSetting);
   preferences.putString("precipUnit", precipitationUnitSetting);
+  preferences.putString("language", languageSetting);
   preferences.end();
   Serial.println("Settings saved");
   return true;
@@ -54,6 +61,7 @@ bool loadSettings() {
                         MAX_WIND_SPEED_UNIT_LENGTH);
   preferences.getString("precipUnit", precipitationUnitSetting,
                         MAX_PRECIPITATION_UNIT_LENGTH);
+  preferences.getString("language", languageSetting, MAX_LANGUAGE_LENGTH);
   preferences.end();
   Serial.println("Settings loaded");
   return true;
@@ -65,4 +73,5 @@ void printSettings() {
   Serial.printf("  Temperature unit: %s\n", tempUnitSetting);
   Serial.printf("  Wind speed unit: %s\n", windSpeedUnitSetting);
   Serial.printf("  Precipitation unit: %s\n", precipitationUnitSetting);
+  Serial.printf("  Language: %s\n", languageSetting);
 }

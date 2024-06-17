@@ -1,5 +1,6 @@
 // #define FULL_NAMES
 
+// ENGLISH
 #ifdef FULL_NAMES
 const char* WEEKDAY_NAMES_EN[] = {"",        "Sunday",    "Monday",
                                   "Tuesday", "Wednesday", "Thursday",
@@ -50,6 +51,7 @@ const char* WEATHERS_EN[] = {"Clear sky",
                              "Heavy hailing thunderstorms",
                              "Unknown"};
 
+// CHINESE
 const char* WEEKDAY_NAMES_CN[] = {"",       "星期一", "星期二", "星期三",
                                   "星期四", "星期五", "星期六", "星期日"};
 #ifdef FULL_NAMES
@@ -76,3 +78,8 @@ const char* DAY_NAMES_CN[] = {
     "16日", "17日", "18日", "19日", "20日", "21日", "22日", "23日",
     "24日", "25日", "26日", "27日", "28日", "29日", "30日", "31日"};
 #endif
+const char* WEATHERS_CN[] = { // Google Translate sad
+    "晴朗",   "基本晴朗", "部分晴朗", "阴天",     "雾",     "霜",     "小雨",
+    "中雨",   "密集小雨", "小冻雨",   "密集冻雨", "小雨",   "中雨",   "大雨",
+    "小冻雨", "大雪",     "中雪",     "大雪",     "雪粒",   "小阵雨", "中雨",
+    "大雨",   "小雪",     "大雪",     "雷暴",     "小冰雹", "大冰雹", "未知"};

@@ -389,12 +389,18 @@ const char* WMOCodeToLabel(uint8_t code) {
   const uint8_t codes[] = {0,  1,  2,  3,  45, 48, 51, 53, 55, 56,
                            57, 61, 63, 65, 66, 67, 71, 73, 75, 77,
                            80, 81, 82, 85, 86, 95, 96, 99};
+  const char** strings;
+  if (strcmp(languageSetting, LANGUAGE_EN) == 0) {
+    strings = WEATHERS_EN;
+  } else {
+    strings = WEATHERS_CN;
+  }
   for (uint8_t i = 0; i < sizeof(codes) / sizeof(codes[0]); i++) {
     if (code == codes[i]) {
-      return WEATHERS_EN[i];
+      return strings[i];
     }
   }
-  return WEATHERS_EN[sizeof(codes) / sizeof(codes[0]) - 1];
+  return strings[sizeof(codes) / sizeof(codes[0]) - 1];
 }
 
 char* formatTemp(char* buf, size_t bufSize, float temp) {
@@ -409,7 +415,11 @@ char* formatTemp(char* buf, size_t bufSize, float temp) {
 void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
   display.fillScreen(GxEPD_WHITE);
 
-  u8g2.setFont(u8g2_font_unifont_tf);
+  if (strcmp(languageSetting, LANGUAGE_EN) == 0) {
+    u8g2.setFont(u8g2_font_unifont_tf);
+  } else {
+    u8g2.setFont(u8g2_font_wqy16_t_gb2312);
+  }
 
   u8g2.setCursor(30, 46);
   u8g2.print(geoData.name);
@@ -444,6 +454,18 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
   u8g2.print(round(weatherData.currHumidity), 0);
   u8g2.print("%");
 
+  const char** weekdayNames;
+  const char** monthNames;
+  const char** dayNames;
+  if (strcmp(languageSetting, LANGUAGE_EN) == 0) {
+    weekdayNames = WEEKDAY_NAMES_EN;
+    monthNames = MONTH_NAMES_EN;
+    dayNames = DAY_NAMES_EN;
+  } else {
+    weekdayNames = WEEKDAY_NAMES_CN;
+    monthNames = MONTH_NAMES_CN;
+    dayNames = DAY_NAMES_CN;
+  }
   const uint16_t y = 270;
   for (uint8_t i = 1; i < MAX_FORECAST_DAYS - 1; i++) {
     const uint16_t x = 160 * (i - 1);
@@ -451,13 +473,13 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
 
     const uint32_t time = weatherData.forecastUnixTimes[i];
 
-    const char* dayName = WEEKDAY_NAMES_EN[weekday(time)];
+    const char* dayName = weekdayNames[weekday(time)];
     u8g2.setCursor(cursorXFromCenter(dayName, centerX), y);
     u8g2.print(dayName);
 
     char dateBuf[16];
-    snprintf(dateBuf, sizeof(dateBuf), "%s %s", MONTH_NAMES_EN[month(time)],
-             DAY_NAMES_EN[day(time)]);
+    snprintf(dateBuf, sizeof(dateBuf), "%s %s", monthNames[month(time)],
+             dayNames[day(time)]);
     u8g2.setCursor(cursorXFromCenter(dateBuf, centerX), y + 20);
     u8g2.print(dateBuf);
 

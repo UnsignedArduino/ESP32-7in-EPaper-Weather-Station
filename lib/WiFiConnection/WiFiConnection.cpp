@@ -88,6 +88,16 @@ int8_t connectToWiFi() {
       "precipitationUnitID", "Precipitation unit: (Should be hidden)", "", 3);
   wm.addParameter(&customPrecipitationUnit);
 
+  char customLanguageHTML[1024];
+  generateHTMLForSelect(customLanguageHTML, sizeof(customLanguageHTML),
+                        "Language", "languageInjectID", "languageID", LANGUAGES,
+                        LANGUAGES_LABELS, MAX_LANGUAGES, languageSetting);
+  WiFiManagerParameter customLanguageInject(customLanguageHTML);
+  wm.addParameter(&customLanguageInject);
+  WiFiManagerParameter customLanguage("languageID",
+                                      "Language: (Should be hidden)", "", 3);
+  wm.addParameter(&customLanguage);
+
   char ssid[32];
   char password[64];
   snprintf(ssid, sizeof(ssid), "Weather Station %04X",
@@ -120,6 +130,7 @@ int8_t connectToWiFi() {
               MAX_WIND_SPEED_UNIT_LENGTH);
       strncpy(precipitationUnitSetting, customPrecipitationUnit.getValue(),
               MAX_PRECIPITATION_UNIT_LENGTH);
+      strncpy(languageSetting, customLanguage.getValue(), MAX_LANGUAGE_LENGTH);
       saveSettings();
       printSettings();
     }
