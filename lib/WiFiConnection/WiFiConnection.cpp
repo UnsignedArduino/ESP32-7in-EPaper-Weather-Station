@@ -44,7 +44,7 @@ int8_t resetWiFiSettings() {
   return 0;
 }
 
-int8_t connectToWiFi() {
+int8_t connectToWiFi(void (*onConfigAPLaunch)(char*, char*, char*)) {
   Serial.println("Connecting to WiFi");
   WiFiManager wm;
 
@@ -104,16 +104,21 @@ int8_t connectToWiFi() {
            (uint16_t)(ESP.getEfuseMac() & 0xFFFF));
   snprintf(password, sizeof(password), "%012llX", ESP.getEfuseMac());
 
-  wm.setAPCallback([ssid, password](WiFiManager* wm) {
+  wm.setAPCallback([ssid, password, onConfigAPLaunch](WiFiManager* wm) {
     Serial.println("Launched configuration AP");
     Serial.printf("SSID: %s\n", ssid);
     Serial.printf("Password: %s\n", password);
     Serial.printf("IP: %s\n", WiFi.softAPIP().toString().c_str());
+    onConfigAPLaunch((char*)ssid, (char*)password,
+                     (char*)WiFi.softAPIP().toString().c_str());
   });
   wm.setConfigPortalTimeout(120);
   wm.setConnectTimeout(30);
-  wm.setConfigPortalTimeoutCallback(
-      []() { Serial.println("Configuration portal timed out"); });
+  bool timedOut = false;
+  wm.setConfigPortalTimeoutCallback([&timedOut]() {
+    Serial.println("Configuration portal timed out");
+    timedOut = true;
+  });
   bool shouldSaveConfig = false;
   wm.setSaveConfigCallback([&shouldSaveConfig]() { shouldSaveConfig = true; });
 
@@ -133,12 +138,18 @@ int8_t connectToWiFi() {
       strncpy(languageSetting, customLanguage.getValue(), MAX_LANGUAGE_LENGTH);
       saveSettings();
       printSettings();
+      return WIFI_CONNECTION_SUCCESS_CONFIG;
+    } else {
+      return WIFI_CONNECTION_SUCCESS;
     }
-
-    return 0;
   } else {
     Serial.println("Failed to connect to WiFi");
-    return -1;
+    if (timedOut) {
+      Serial.println("Due to configuration AP timeout");
+      return WIFI_CONNECTION_ERROR_TIMEOUT;
+    } else {
+      return WIFI_CONNECTION_ERROR;
+    }
   }
 }
 

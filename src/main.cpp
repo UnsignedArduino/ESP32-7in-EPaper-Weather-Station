@@ -403,7 +403,7 @@ const char* WMOCodeToLabel(uint8_t code) {
       return strings[i];
     }
   }
-  return strings[sizeof(codes) / sizeof(codes[0]) - 1];
+  return strings[sizeof(codes) / sizeof(codes[0])]; // missing -1 intentional
 }
 
 char* formatTemp(char* buf, size_t bufSize, float temp) {
@@ -590,24 +590,99 @@ void setup() {
 
   loadSettings();
   printSettings();
-  // TODO: If we go to WiFi provisioning / configuration, show wifi icons, QR
-  // code, instructions etc. Then show refresh icon again afterwards.
-  connectToWiFi();
+  const int8_t connectRes = connectToWiFi([](char* ssid, char* password,
+                                             char* ip) {
+    display.fillScreen(GxEPD_WHITE);
+    u8g2.setCursor(30, 46);
+    // TODO: Localize with localizedStrings.h, add icon
+    u8g2.print("Configuration AP launched.");
+    u8g2.setCursor(30, 66);
+    u8g2.print(
+        "Join the WiFi network in order to configure the weather station. (the "
+        "IP to go to may pop up automatically depending on the device)");
+    u8g2.setCursor(30, 106);
+
+    u8g2.print("SSID: ");
+    u8g2.print(ssid);
+    u8g2.setCursor(30, 126);
+    u8g2.print("Password: ");
+    u8g2.print(password);
+    u8g2.setCursor(30, 146);
+    u8g2.print("IP: ");
+    u8g2.print(ip);
+
+    u8g2.setCursor(30, 186);
+    u8g2.print("Once on the page with titled \"WiFiManager\", hit the "
+               "\"Configure WiFi\" button.");
+    u8g2.setCursor(30, 206);
+    u8g2.print("Select a WiFi network and type in the password. Change the "
+               "other options to configure to your ");
+    u8g2.setCursor(30, 226);
+    u8g2.print("liking. Then hit the \"Save\" button. You will be disconnected "
+               "from the configuration WiFi network.");
+
+    display.display(false);
+  });
+  bool showWeather = true;
+  switch (connectRes) {
+    default:
+    case WIFI_CONNECTION_SUCCESS:
+      break;
+    case WIFI_CONNECTION_SUCCESS_CONFIG: {
+      display.fillScreen(GxEPD_WHITE);
+      u8g2.setCursor(30, 46);
+      // TODO: Localize with localizedStrings.h, add icon
+      u8g2.print("Successfully configured!");
+      u8g2.setCursor(30, 66);
+      u8g2.print("Refreshing...");
+      display.display(false);
+      break;
+    }
+    case WIFI_CONNECTION_ERROR: {
+      display.fillScreen(GxEPD_WHITE);
+      u8g2.setCursor(30, 46);
+      // TODO: Localize with localizedStrings.h, add icon
+      u8g2.print("Failed to connect to WiFi!");
+      u8g2.setCursor(30, 66);
+      u8g2.print("Hold the function button for 3 seconds to restart the WiFi "
+                 "configuration process.");
+      display.display(false);
+      showWeather = false;
+      break;
+    }
+    case WIFI_CONNECTION_ERROR_TIMEOUT: {
+      display.fillScreen(GxEPD_WHITE);
+      u8g2.setCursor(30, 46);
+      // TODO: Localize with localizedStrings.h, add icon
+      u8g2.print("Configuration timed out!");
+      u8g2.setCursor(30, 66);
+      u8g2.print("Hold the function button for 3 seconds to restart the WiFi "
+                 "configuration process.");
+      display.display(false);
+      showWeather = false;
+      break;
+    }
+  }
 
   const uint32_t timeFinishWiFiConnect = millis();
+  uint32_t timeFinishDataFetch = millis();
 
-  GeocodeData geocodeData;
-  getGeocode(cityOrPostalCodeSetting, geocodeData);
+  if (showWeather) {
+    GeocodeData geocodeData;
+    getGeocode(cityOrPostalCodeSetting, geocodeData);
 
-  WeatherData weatherData;
-  int8_t result =
-      getWeather(geocodeData.latitude, geocodeData.longitude, weatherData);
+    WeatherData weatherData;
+    int8_t result =
+        getWeather(geocodeData.latitude, geocodeData.longitude, weatherData);
 
-  disconnectFromWiFi();
+    disconnectFromWiFi();
 
-  const uint32_t timeFinishDataFetch = millis();
+    timeFinishDataFetch = millis();
 
-  displayWeather(geocodeData, weatherData);
+    displayWeather(geocodeData, weatherData);
+  } else {
+    disconnectFromWiFi();
+  }
 
   displayEnd();
 
