@@ -3,6 +3,7 @@
 #include "Touch.h"
 #include "Weather.h"
 #include "WiFiConnection.h"
+#include "config.h"
 #include "localizedStrings.h"
 #include "pins.h"
 #include <Adafruit_EPD.h>
@@ -80,21 +81,20 @@ void displayBitmap(const char* filename, int16_t x, int16_t y) {
   uint32_t startTime = millis();
   if ((x >= display.epd2.WIDTH) || (y >= display.epd2.HEIGHT))
     return;
-  Serial.println();
-  Serial.print("Loading image '");
-  Serial.print(filename);
-  Serial.println("'");
+  // Serial.print("Loading image '");
+  // Serial.print(filename);
+  // Serial.println("'");
   file = LittleFS.open(filename, "r");
   if (!file) {
     Serial.println("File not found");
     return;
   } else {
-    Serial.println("Opened file successfully");
+    // Serial.println("Opened file successfully");
   }
   // Parse BMP header
   uint16_t signature = read16(file);
-  Serial.print("Magic number: 0x");
-  Serial.println(signature, HEX);
+  // Serial.print("Magic number: 0x");
+  // Serial.println(signature, HEX);
   if (signature == 0x4D42) // BMP signature
   {
     uint32_t fileSize = read32(file);
@@ -110,18 +110,18 @@ void displayBitmap(const char* filename, int16_t x, int16_t y) {
     if ((planes == 1) &&
         ((format == 0) || (format == 3))) // uncompressed is handled, 565 also
     {
-      Serial.print("File size: ");
-      Serial.println(fileSize);
-      Serial.print("Image Offset: ");
-      Serial.println(imageOffset);
-      Serial.print("Header size: ");
-      Serial.println(headerSize);
-      Serial.print("Bit Depth: ");
-      Serial.println(depth);
-      Serial.print("Image size: ");
-      Serial.print(width);
-      Serial.print('x');
-      Serial.println(height);
+      // Serial.print("File size: ");
+      // Serial.println(fileSize);
+      // Serial.print("Image Offset: ");
+      // Serial.println(imageOffset);
+      // Serial.print("Header size: ");
+      // Serial.println(headerSize);
+      // Serial.print("Bit Depth: ");
+      // Serial.println(depth);
+      // Serial.print("Image size: ");
+      // Serial.print(width);
+      // Serial.print('x');
+      // Serial.println(height);
       // BMP rows are padded (if needed) to 4-byte boundary
       uint32_t rowSize = (width * depth / 8 + 3) & ~3;
       if (depth < 8)
@@ -303,11 +303,12 @@ void displayBitmap(const char* filename, int16_t x, int16_t y) {
           display.drawBitmap(x, yrow, output_row_mono_buffer, w, 1,
                              GxEPD_BLACK);
         } // end line
-        Serial.print("loaded in ");
-        Serial.print(millis() - startTime);
-        Serial.println(" ms");
+        // Serial.print("loaded in ");
+        // Serial.print(millis() - startTime);
+        // Serial.println(" ms");
       }
     } else {
+      Serial.printf("Error display bitmap %s\n", filename);
       Serial.println("Invalid bitmap format and plane count");
       Serial.print("planes: ");
       Serial.println(planes);
@@ -315,10 +316,12 @@ void displayBitmap(const char* filename, int16_t x, int16_t y) {
       Serial.println(format);
     }
   } else {
+    Serial.printf("Error display bitmap %s\n", filename);
     Serial.println("Not a bitmap");
   }
   file.close();
   if (!valid) {
+    Serial.printf("Error display bitmap %s\n", filename);
     Serial.println("bitmap format not handled.");
   }
 }
@@ -415,12 +418,6 @@ char* formatTemp(char* buf, size_t bufSize, float temp) {
 void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
   display.fillScreen(GxEPD_WHITE);
 
-  if (strcmp(languageSetting, LANGUAGE_EN) == 0) {
-    u8g2.setFont(u8g2_font_unifont_tf);
-  } else {
-    u8g2.setFont(u8g2_font_wqy16_t_gb2312);
-  }
-
   u8g2.setCursor(30, 46);
   u8g2.print(geoData.name);
   char* locationParts[] = {geoData.name,   geoData.admin4, geoData.admin3,
@@ -498,12 +495,71 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
   display.display(false);
 }
 
+void printWakeupReason() {
+  esp_sleep_wakeup_cause_t reason = esp_sleep_get_wakeup_cause();
+
+  switch (reason) {
+    case ESP_SLEEP_WAKEUP_EXT0:
+      Serial.println("Wakeup caused by external signal using RTC_IO");
+      break;
+    case ESP_SLEEP_WAKEUP_EXT1:
+      Serial.println("Wakeup caused by external signal using RTC_CNTL");
+      break;
+    case ESP_SLEEP_WAKEUP_TIMER:
+      Serial.println("Wakeup caused by timer");
+      break;
+    case ESP_SLEEP_WAKEUP_TOUCHPAD:
+      Serial.println("Wakeup caused by touch");
+      break;
+    case ESP_SLEEP_WAKEUP_ULP:
+      Serial.println("Wakeup caused by ULP program");
+      break;
+    default:
+      Serial.printf("Wakeup was not caused by deep sleep: %d\n", reason);
+      break;
+  }
+}
+
+RTC_DATA_ATTR bool lastUpdateSuccess = false;
+
 void setup() {
   Serial.begin(115200);
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
 
+  // Weird deep sleep bug workaround
+  delay(500);
+
+  Serial.printf("Efuse MAC: 0x%012llX\n", ESP.getEfuseMac());
+
+  bool showRefresh = true;
+
+  printWakeupReason();
+
+  // TODO: Add touch pad wake up
+  esp_sleep_enable_timer_wakeup(UPDATE_TIME * 60 * 1000000ULL);
+
+  if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER &&
+      lastUpdateSuccess) {
+    showRefresh = false;
+    Serial.println("Not showing refresh because of timer wakeup and last "
+                   "update was a success");
+  }
+
   displayBegin();
+  if (strcmp(languageSetting, LANGUAGE_EN) == 0) {
+    u8g2.setFont(u8g2_font_unifont_tf);
+  } else {
+    u8g2.setFont(u8g2_font_wqy16_t_gb2312);
+  }
+
+  if (showRefresh) {
+    display.fillScreen(GxEPD_WHITE);
+    u8g2.setCursor(30, 46);
+    // TODO: Localize with localizedStrings.h, add icon
+    u8g2.print("Refreshing...");
+    display.display(false);
+  }
 
   if (!LittleFS.begin()) {
     Serial.println("Failed to mount file system");
@@ -513,18 +569,29 @@ void setup() {
                   LittleFS.totalBytes() / 1024);
   }
 
-  // Weird deep sleep bug workaround
-  delay(500);
-
-  Serial.printf("Efuse MAC: 0x%012llX\n", ESP.getEfuseMac());
-
   if (isTouched()) {
-    Serial.println("Touch detected, resetting WiFi settings");
-    resetWiFiSettings();
+    Serial.println("Touch detected, hold for 3 second to reset WiFi settings");
+    digitalWrite(LED_BUILTIN, HIGH);
+    const uint32_t start = millis();
+    while (millis() - start < 3000) {
+      if (!isTouched()) {
+        break;
+      }
+      delay(10);
+    }
+    digitalWrite(LED_BUILTIN, LOW);
+    if (isTouched()) {
+      Serial.println("Held for 3 seconds, resetting WiFi settings");
+      resetWiFiSettings();
+    } else {
+      Serial.println("Continuing without resetting");
+    }
   }
 
   loadSettings();
   printSettings();
+  // TODO: If we go to WiFi provisioning / configuration, show wifi icons, QR
+  // code, instructions etc. Then show refresh icon again afterwards.
   connectToWiFi();
 
   const uint32_t timeFinishWiFiConnect = millis();
@@ -535,6 +602,8 @@ void setup() {
   WeatherData weatherData;
   int8_t result =
       getWeather(geocodeData.latitude, geocodeData.longitude, weatherData);
+
+  disconnectFromWiFi();
 
   const uint32_t timeFinishDataFetch = millis();
 
@@ -548,6 +617,11 @@ void setup() {
   Serial.printf("  WiFi connect finished at ms %lu\n", timeFinishWiFiConnect);
   Serial.printf("  Data fetch finished at ms %lu\n", timeFinishDataFetch);
   Serial.printf("  Display finished at ms %lu\n", timeFinishDisplay);
+
+  lastUpdateSuccess = true;
+
+  Serial.printf("Updating again in %d minutes\n", UPDATE_TIME);
+  esp_deep_sleep_start();
 }
 
 void loop() {}

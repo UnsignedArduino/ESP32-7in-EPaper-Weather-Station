@@ -7,5 +7,6 @@
 
 int8_t resetWiFiSettings();
 int8_t connectToWiFi();
+int8_t disconnectFromWiFi();
 
 #endif

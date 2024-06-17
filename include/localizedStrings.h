@@ -52,8 +52,8 @@ const char* WEATHERS_EN[] = {"Clear sky",
                              "Unknown"};
 
 // CHINESE
-const char* WEEKDAY_NAMES_CN[] = {"",       "星期一", "星期二", "星期三",
-                                  "星期四", "星期五", "星期六", "星期日"};
+const char* WEEKDAY_NAMES_CN[] = {"",       "星期日", "星期一", "星期二",
+                                  "星期三", "星期四", "星期五", "星期六"};
 #ifdef FULL_NAMES
 const char* MONTH_NAMES_CN[] = {"",     "一月",   "二月",  "三月", "四月",
                                 "五月", "六月",   "七月",  "八月", "九月",

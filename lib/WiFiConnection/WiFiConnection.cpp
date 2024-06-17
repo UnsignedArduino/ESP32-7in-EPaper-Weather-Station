@@ -141,3 +141,12 @@ int8_t connectToWiFi() {
     return -1;
   }
 }
+
+int8_t disconnectFromWiFi() {
+  Serial.println("Disconnecting and turning WiFi off!");
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_OFF);
+
+  esp_wifi_stop();
+  return 0;
+}

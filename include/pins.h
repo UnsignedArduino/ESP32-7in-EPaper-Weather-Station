@@ -17,7 +17,7 @@ Wiring (using Firebeetle ESP32 dev board)
     - Display config: "B" (0.47R)
     - SPI: 0 (4 line SPI)
 
-- Touch pin: IO 15
+- Function button (touch pin): IO 15
   Used for refreshing the display when touched or resetting WiFi settings
 
 */
