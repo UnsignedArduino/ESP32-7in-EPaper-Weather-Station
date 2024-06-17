@@ -520,6 +520,16 @@ void printWakeupReason() {
   }
 }
 
+void loadFontForCurrentLang() {
+  if (strcmp(languageSetting, LANGUAGE_EN) == 0) {
+    Serial.println("Using GNU Unifont (for EN)");
+    u8g2.setFont(u8g2_font_unifont_tf);
+  } else {
+    Serial.println("Using WenQuanYi Micro Hei (for CN)");
+    u8g2.setFont(u8g2_font_wqy16_t_gb2312);
+  }
+}
+
 RTC_DATA_ATTR bool lastUpdateSuccess = false;
 
 void setup() {
@@ -546,12 +556,11 @@ void setup() {
                    "update was a success");
   }
 
+  loadSettings();
+  printSettings();
+
   displayBegin();
-  if (strcmp(languageSetting, LANGUAGE_EN) == 0) {
-    u8g2.setFont(u8g2_font_unifont_tf);
-  } else {
-    u8g2.setFont(u8g2_font_wqy16_t_gb2312);
-  }
+  loadFontForCurrentLang();
 
   if (showRefresh) {
     display.fillScreen(GxEPD_WHITE);
@@ -588,41 +597,42 @@ void setup() {
     }
   }
 
-  loadSettings();
-  printSettings();
-  const int8_t connectRes = connectToWiFi([](char* ssid, char* password,
-                                             char* ip) {
-    display.fillScreen(GxEPD_WHITE);
-    u8g2.setCursor(30, 46);
-    // TODO: Localize with localizedStrings.h, add icon
-    u8g2.print("Configuration AP launched.");
-    u8g2.setCursor(30, 66);
-    u8g2.print(
-        "Join the WiFi network in order to configure the weather station. (the "
-        "IP to go to may pop up automatically depending on the device)");
-    u8g2.setCursor(30, 106);
+  const int8_t connectRes =
+      connectToWiFi([](char* ssid, char* password, char* ip) {
+        display.fillScreen(GxEPD_WHITE);
+        u8g2.setCursor(30, 46);
+        // TODO: Localize with localizedStrings.h, add icon
+        u8g2.print("Configuration AP launched.");
+        u8g2.setCursor(30, 66);
+        u8g2.print(
+            "Join the WiFi network in order to configure the weather station.");
+        u8g2.setCursor(30, 106);
 
-    u8g2.print("SSID: ");
-    u8g2.print(ssid);
-    u8g2.setCursor(30, 126);
-    u8g2.print("Password: ");
-    u8g2.print(password);
-    u8g2.setCursor(30, 146);
-    u8g2.print("IP: ");
-    u8g2.print(ip);
+        u8g2.print("SSID: ");
+        u8g2.print(ssid);
+        u8g2.setCursor(30, 126);
+        u8g2.print("Password: ");
+        u8g2.print(password);
+        u8g2.setCursor(30, 146);
+        u8g2.print("IP: ");
+        u8g2.print(ip);
+        u8g2.print(
+            " (may pop up automatically or you may be asked to \"sign in\")");
 
-    u8g2.setCursor(30, 186);
-    u8g2.print("Once on the page with titled \"WiFiManager\", hit the "
-               "\"Configure WiFi\" button.");
-    u8g2.setCursor(30, 206);
-    u8g2.print("Select a WiFi network and type in the password. Change the "
-               "other options to configure to your ");
-    u8g2.setCursor(30, 226);
-    u8g2.print("liking. Then hit the \"Save\" button. You will be disconnected "
-               "from the configuration WiFi network.");
+        u8g2.setCursor(30, 186);
+        u8g2.print("Once on the page with titled \"WiFiManager\", hit the "
+                   "\"Configure WiFi\" button.");
+        u8g2.setCursor(30, 206);
+        u8g2.print("Select a WiFi network and type in the password. Change the "
+                   "other options to configure to ");
+        u8g2.setCursor(30, 226);
+        u8g2.print("your liking. Then hit the \"Save\" button. You will be "
+                   "disconnected from the ");
+        u8g2.setCursor(30, 246);
+        u8g2.print("configuration WiFi network.");
 
-    display.display(false);
-  });
+        display.display(false);
+      });
   bool showWeather = true;
   switch (connectRes) {
     default:
@@ -630,6 +640,8 @@ void setup() {
       break;
     case WIFI_CONNECTION_SUCCESS_CONFIG: {
       display.fillScreen(GxEPD_WHITE);
+      // In case the user changed it
+      loadFontForCurrentLang();
       u8g2.setCursor(30, 46);
       // TODO: Localize with localizedStrings.h, add icon
       u8g2.print("Successfully configured!");

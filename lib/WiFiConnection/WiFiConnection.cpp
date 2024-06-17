@@ -48,39 +48,39 @@ int8_t connectToWiFi(void (*onConfigAPLaunch)(char*, char*, char*)) {
   Serial.println("Connecting to WiFi");
   WiFiManager wm;
 
+  const uint16_t MAX_HTML_SIZE = 1024;
+
   WiFiManagerParameter customCityOrPostalCode(
       "cityOrPostalCode", "City or postal code", cityOrPostalCodeSetting, 32);
   wm.addParameter(&customCityOrPostalCode);
 
-  char customTempUnitHTML[1024];
-  generateHTMLForSelect(customTempUnitHTML, sizeof(customTempUnitHTML),
-                        "Temperature unit", "tempUnitInjectID", "tempUnitID",
-                        TEMP_UNITS, TEMP_UNITS_LABELS, MAX_TEMP_UNITS,
-                        tempUnitSetting);
+  char* customTempUnitHTML = (char*)malloc(MAX_HTML_SIZE);
+  generateHTMLForSelect(customTempUnitHTML, MAX_HTML_SIZE, "Temperature unit",
+                        "tempUnitInjectID", "tempUnitID", TEMP_UNITS,
+                        TEMP_UNITS_LABELS, MAX_TEMP_UNITS, tempUnitSetting);
   WiFiManagerParameter customTempUnitInject(customTempUnitHTML);
   wm.addParameter(&customTempUnitInject);
   WiFiManagerParameter customTempUnit(
       "tempUnitID", "Temperature unit: (Should be hidden)", "", 2);
   wm.addParameter(&customTempUnit);
 
-  char customWindSpeedUnitHTML[1024];
-  generateHTMLForSelect(customWindSpeedUnitHTML,
-                        sizeof(customWindSpeedUnitHTML), "Wind speed unit",
-                        "windSpeedUnitInjectID", "windSpeedUnitID",
-                        WIND_SPEED_UNITS, WIND_SPEED_UNITS_LABELS,
-                        MAX_WIND_SPEED_UNITS, windSpeedUnitSetting);
+  char* customWindSpeedUnitHTML = (char*)malloc(MAX_HTML_SIZE);
+  generateHTMLForSelect(
+      customWindSpeedUnitHTML, MAX_HTML_SIZE, "Wind speed unit",
+      "windSpeedUnitInjectID", "windSpeedUnitID", WIND_SPEED_UNITS,
+      WIND_SPEED_UNITS_LABELS, MAX_WIND_SPEED_UNITS, windSpeedUnitSetting);
   WiFiManagerParameter customWindSpeedUnitInject(customWindSpeedUnitHTML);
   wm.addParameter(&customWindSpeedUnitInject);
   WiFiManagerParameter customWindSpeedUnit(
       "windSpeedUnitID", "Wind speed unit: (Should be hidden)", "", 4);
   wm.addParameter(&customWindSpeedUnit);
 
-  char customPrecipitationUnitHTML[1024];
-  generateHTMLForSelect(
-      customPrecipitationUnitHTML, sizeof(customPrecipitationUnitHTML),
-      "Precipitation unit", "precipitationUnitInjectID", "precipitationUnitID",
-      PRECIPITATION_UNITS, PRECIPITATION_UNITS_LABELS, MAX_PRECIPITATION_UNITS,
-      precipitationUnitSetting);
+  char* customPrecipitationUnitHTML = (char*)malloc(MAX_HTML_SIZE);
+  generateHTMLForSelect(customPrecipitationUnitHTML, MAX_HTML_SIZE,
+                        "Precipitation unit", "precipitationUnitInjectID",
+                        "precipitationUnitID", PRECIPITATION_UNITS,
+                        PRECIPITATION_UNITS_LABELS, MAX_PRECIPITATION_UNITS,
+                        precipitationUnitSetting);
   WiFiManagerParameter customPrecipitationUnitInject(
       customPrecipitationUnitHTML);
   wm.addParameter(&customPrecipitationUnitInject);
@@ -88,9 +88,9 @@ int8_t connectToWiFi(void (*onConfigAPLaunch)(char*, char*, char*)) {
       "precipitationUnitID", "Precipitation unit: (Should be hidden)", "", 3);
   wm.addParameter(&customPrecipitationUnit);
 
-  char customLanguageHTML[1024];
-  generateHTMLForSelect(customLanguageHTML, sizeof(customLanguageHTML),
-                        "Language", "languageInjectID", "languageID", LANGUAGES,
+  char* customLanguageHTML = (char*)malloc(MAX_HTML_SIZE);
+  generateHTMLForSelect(customLanguageHTML, MAX_HTML_SIZE, "Language",
+                        "languageInjectID", "languageID", LANGUAGES,
                         LANGUAGES_LABELS, MAX_LANGUAGES, languageSetting);
   WiFiManagerParameter customLanguageInject(customLanguageHTML);
   wm.addParameter(&customLanguageInject);
@@ -123,6 +123,12 @@ int8_t connectToWiFi(void (*onConfigAPLaunch)(char*, char*, char*)) {
   wm.setSaveConfigCallback([&shouldSaveConfig]() { shouldSaveConfig = true; });
 
   const bool res = wm.autoConnect(ssid, password);
+
+  free(customTempUnitHTML);
+  free(customWindSpeedUnitHTML);
+  free(customPrecipitationUnitHTML);
+  free(customLanguageHTML);
+
   if (res) {
     Serial.println("Connected to WiFi");
 
