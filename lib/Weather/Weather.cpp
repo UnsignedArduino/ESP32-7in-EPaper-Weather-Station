@@ -1,8 +1,18 @@
 #include "Weather.h"
 
+void printUnixTime(uint32_t unixTime) {
+  char timestamp[MAX_TIMESTAMP_SIZE];
+  snprintf(timestamp, MAX_TIMESTAMP_SIZE, "%02d/%02d/%04d %02d:%02d:%02d",
+           month(unixTime), day(unixTime), year(unixTime), hour(unixTime),
+           minute(unixTime), second(unixTime));
+  Serial.print(timestamp);
+}
+
 void printWeather(WeatherData& data) {
   Serial.println("Current weather:");
-  Serial.printf("  Time: %s\n", data.currISOTime);
+  Serial.printf("  Time: ");
+  printUnixTime(data.currUnixTime);
+  Serial.println();
   Serial.printf("  Weather code: %d\n", data.currWeatherCode);
   Serial.printf("  Temperature: %.1f\n", data.currTemp);
   Serial.printf("  High temp: %.1f\n", data.currHighTemp);
@@ -12,7 +22,9 @@ void printWeather(WeatherData& data) {
 
   Serial.println("Forecast:");
   for (uint8_t i = 0; i < MAX_FORECAST_DAYS; i++) {
-    Serial.printf("  (%d) Time: %s\n", i, data.forecastISOTimes[i]);
+    Serial.printf("  (%d) Time: ", i);
+    printUnixTime(data.forecastUnixTimes[i]);
+    Serial.println();
     Serial.printf("  (%d) Weather code: %d\n", i, data.forecastWeatherCodes[i]);
     Serial.printf("  (%d) High temp: %.1f\n", i, data.forecastHighTemps[i]);
     Serial.printf("  (%d) Low temp: %.1f\n", i, data.forecastLowTemps[i]);
@@ -57,8 +69,8 @@ int8_t getWeather(float latitude, float longitude, WeatherData& data) {
     client.print("precipitation_unit=inch&");
   } // mm is default
 
-  client.print(
-      "timezone=auto HTTP/1.1\r\nHost: api.open-meteo.com\r\n\r\n");
+  client.print("timeformat=unixtime&timezone=auto HTTP/1.1\r\nHost: "
+               "api.open-meteo.com\r\n\r\n");
 
   Serial.println("Waiting for response");
   const uint32_t timeout = millis() + 5000;
@@ -87,7 +99,7 @@ int8_t getWeather(float latitude, float longitude, WeatherData& data) {
   }
 
   JsonObject current = doc["current"];
-  strcpy(data.currISOTime, current["time"]);
+  data.currUnixTime = current["time"];
   data.currWeatherCode = doc["daily"]["weather_code"][0];
   data.currTemp = current["temperature_2m"];
   data.currHighTemp = doc["daily"]["temperature_2m_max"][0];
@@ -101,7 +113,7 @@ int8_t getWeather(float latitude, float longitude, WeatherData& data) {
   JsonArray dailyHighTemps = daily["temperature_2m_max"];
   JsonArray dailyLowTemps = daily["temperature_2m_min"];
   for (uint8_t i = 0; i < MAX_FORECAST_DAYS; i++) {
-    strcpy(data.forecastISOTimes[i], dailyTimes[i]);
+    data.forecastUnixTimes[i] = dailyTimes[i];
     data.forecastWeatherCodes[i] = dailyWeatherCodes[i];
     data.forecastHighTemps[i] = dailyHighTemps[i];
     data.forecastLowTemps[i] = dailyLowTemps[i];

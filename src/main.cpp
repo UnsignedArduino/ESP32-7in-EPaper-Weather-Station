@@ -3,6 +3,7 @@
 #include "Touch.h"
 #include "Weather.h"
 #include "WiFiConnection.h"
+#include "localizedStrings.h"
 #include "pins.h"
 #include <Adafruit_EPD.h>
 #include <Adafruit_GFX.h>
@@ -322,6 +323,10 @@ void displayBitmap(const char* filename, int16_t x, int16_t y) {
   }
 }
 
+uint16_t cursorXFromCenter(const char* text, uint16_t centerX) {
+  return centerX - u8g2.getUTF8Width(text) / 2;
+}
+
 const char* WMOCodeToFilename(uint8_t code, bool isDay) {
   // https://open-meteo.com/en/docs#:~:text=WMO%20Weather%20interpretation%20codes%20(WW)
   // Icons from QWeather
@@ -379,12 +384,34 @@ const char* WMOCodeToFilename(uint8_t code, bool isDay) {
   }
 }
 
+const char* WMOCodeToLabel(uint8_t code) {
+  // https://open-meteo.com/en/docs#:~:text=WMO%20Weather%20interpretation%20codes%20(WW)
+  const uint8_t codes[] = {0,  1,  2,  3,  45, 48, 51, 53, 55, 56,
+                           57, 61, 63, 65, 66, 67, 71, 73, 75, 77,
+                           80, 81, 82, 85, 86, 95, 96, 99};
+  for (uint8_t i = 0; i < sizeof(codes) / sizeof(codes[0]); i++) {
+    if (code == codes[i]) {
+      return WEATHERS_EN[i];
+    }
+  }
+  return WEATHERS_EN[sizeof(codes) / sizeof(codes[0]) - 1];
+}
+
+char* formatTemp(char* buf, size_t bufSize, float temp) {
+  if (strcmp(tempUnitSetting, TEMP_UNIT_CELSIUS) == 0) {
+    snprintf(buf, bufSize, "%.0f°C", round(temp));
+  } else {
+    snprintf(buf, bufSize, "%.0f°F", round(temp));
+  }
+  return buf;
+}
+
 void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
   display.fillScreen(GxEPD_WHITE);
 
-  u8g2.setFont(u8g2_font_10x20_mf);
+  u8g2.setFont(u8g2_font_unifont_tf);
 
-  u8g2.setCursor(30, 42);
+  u8g2.setCursor(30, 46);
   u8g2.print(geoData.name);
   char* locationParts[] = {geoData.name,   geoData.admin4, geoData.admin3,
                            geoData.admin2, geoData.admin1, geoData.country};
@@ -399,11 +426,51 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
 
   displayBitmap(
       WMOCodeToFilename(weatherData.currWeatherCode, weatherData.currIsDay), 30,
-      42);
+      100);
 
+  u8g2.setCursor(150, 100);
+  u8g2.print(WMOCodeToLabel(weatherData.currWeatherCode));
+  u8g2.setCursor(150, 120);
+  u8g2.print(round(weatherData.currTemp), 0);
+  u8g2.print(strcmp(tempUnitSetting, TEMP_UNIT_CELSIUS) == 0 ? "°C" : "°F");
+  u8g2.print(" (");
+  u8g2.print(round(weatherData.currLowTemp), 0);
+  u8g2.print(strcmp(tempUnitSetting, TEMP_UNIT_CELSIUS) == 0 ? "°C" : "°F");
+  u8g2.print(" - ");
+  u8g2.print(round(weatherData.currHighTemp), 0);
+  u8g2.print(strcmp(tempUnitSetting, TEMP_UNIT_CELSIUS) == 0 ? "°C" : "°F");
+  u8g2.print(")");
+  u8g2.setCursor(150, 140);
+  u8g2.print(round(weatherData.currHumidity), 0);
+  u8g2.print("%");
+
+  const uint16_t y = 270;
   for (uint8_t i = 1; i < MAX_FORECAST_DAYS - 1; i++) {
+    const uint16_t x = 160 * (i - 1);
+    const uint16_t centerX = x + 80;
+
+    const uint32_t time = weatherData.forecastUnixTimes[i];
+
+    const char* dayName = WEEKDAY_NAMES_EN[weekday(time)];
+    u8g2.setCursor(cursorXFromCenter(dayName, centerX), y);
+    u8g2.print(dayName);
+
+    char dateBuf[16];
+    snprintf(dateBuf, sizeof(dateBuf), "%s %s", MONTH_NAMES_EN[month(time)],
+             DAY_NAMES_EN[day(time)]);
+    u8g2.setCursor(cursorXFromCenter(dateBuf, centerX), y + 20);
+    u8g2.print(dateBuf);
+
+    char tempsBuf[16];
+    formatTemp(tempsBuf, sizeof(tempsBuf), weatherData.forecastLowTemps[i]);
+    u8g2.setCursor(cursorXFromCenter(tempsBuf, centerX), y + 40);
+    u8g2.print(tempsBuf);
+    formatTemp(tempsBuf, sizeof(tempsBuf), weatherData.forecastHighTemps[i]);
+    u8g2.setCursor(cursorXFromCenter(tempsBuf, centerX), y + 60);
+    u8g2.print(tempsBuf);
+
     displayBitmap(WMOCodeToFilename(weatherData.forecastWeatherCodes[i], true),
-                  160 * (i - 1) + 30, 350);
+                  x + 30, y + 80);
   }
 
   display.display(false);

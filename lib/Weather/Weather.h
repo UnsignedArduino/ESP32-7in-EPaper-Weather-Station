@@ -4,6 +4,7 @@
 #include "Settings.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <TimeLib.h>
 #include <WiFi.h>
 
 const int8_t GET_WEATHER_SUCCESS = 0;
@@ -16,7 +17,7 @@ const uint8_t MAX_TIMESTAMP_SIZE = 20;
 
 // clang-format off
 struct WeatherData {
-  char currISOTime[MAX_TIMESTAMP_SIZE];
+  uint32_t currUnixTime;
   uint8_t currWeatherCode;
   float currTemp;
   float currHighTemp;
@@ -24,7 +25,7 @@ struct WeatherData {
   float currHumidity;
   bool currIsDay;
 
-  char forecastISOTimes[MAX_FORECAST_DAYS][MAX_TIMESTAMP_SIZE];
+  uint32_t forecastUnixTimes[MAX_FORECAST_DAYS];
   uint8_t forecastWeatherCodes[MAX_FORECAST_DAYS];
   float forecastHighTemps[MAX_FORECAST_DAYS];
   float forecastLowTemps[MAX_FORECAST_DAYS];
