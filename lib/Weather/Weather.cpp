@@ -3,10 +3,12 @@
 void printWeather(WeatherData& data) {
   Serial.println("Current weather:");
   Serial.printf("  Time: %s\n", data.currISOTime);
+  Serial.printf("  Weather code: %d\n", data.currWeatherCode);
   Serial.printf("  Temperature: %.1f\n", data.currTemp);
+  Serial.printf("  High temp: %.1f\n", data.currHighTemp);
+  Serial.printf("  Low temp: %.1f\n", data.currLowTemp);
   Serial.printf("  Humidity: %.1f\n", data.currHumidity);
   Serial.printf("  Is day: %s\n", data.currIsDay ? "yes" : "no");
-  Serial.printf("  Weather code: %d\n", data.currWeatherCode);
 
   Serial.println("Forecast:");
   for (uint8_t i = 0; i < MAX_FORECAST_DAYS; i++) {
@@ -28,12 +30,16 @@ int8_t getWeather(float latitude, float longitude, WeatherData& data) {
   }
 
   Serial.println("Connected, sending request");
-  client.printf(
-      "GET /v1/forecast?"
-      "latitude=%f&longitude=%f&"
-      "current=temperature_2m,relative_humidity_2m,is_day,weather_code&"
-      "daily=weather_code,temperature_2m_max,temperature_2m_min&",
-      latitude, longitude);
+  // https://api.open-meteo.com/v1/forecast?latitude=XXXX&longitude=XXXX&
+  // current=temperature_2m,relative_humidity_2m,is_day&
+  // daily=weather_code,temperature_2m_max,temperature_2m_min&
+  // temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&
+  // past_days=1
+  client.printf("GET /v1/forecast?"
+                "latitude=%f&longitude=%f&"
+                "current=temperature_2m,relative_humidity_2m,is_day&"
+                "daily=weather_code,temperature_2m_max,temperature_2m_min&",
+                latitude, longitude);
 
   if (strcmp(tempUnitSetting, TEMP_UNIT_FAHRENHEIT) == 0) {
     client.print("temperature_unit=fahrenheit&");
@@ -51,7 +57,8 @@ int8_t getWeather(float latitude, float longitude, WeatherData& data) {
     client.print("precipitation_unit=inch&");
   } // mm is default
 
-  client.print("timezone=auto HTTP/1.1\r\nHost: api.open-meteo.com\r\n\r\n");
+  client.print(
+      "timezone=auto HTTP/1.1\r\nHost: api.open-meteo.com\r\n\r\n");
 
   Serial.println("Waiting for response");
   const uint32_t timeout = millis() + 5000;
@@ -81,10 +88,12 @@ int8_t getWeather(float latitude, float longitude, WeatherData& data) {
 
   JsonObject current = doc["current"];
   strcpy(data.currISOTime, current["time"]);
+  data.currWeatherCode = doc["daily"]["weather_code"][0];
   data.currTemp = current["temperature_2m"];
+  data.currHighTemp = doc["daily"]["temperature_2m_max"][0];
+  data.currLowTemp = doc["daily"]["temperature_2m_min"][0];
   data.currHumidity = current["relative_humidity_2m"];
   data.currIsDay = current["is_day"];
-  data.currWeatherCode = current["weather_code"];
 
   JsonObject daily = doc["daily"];
   JsonArray dailyTimes = daily["time"];

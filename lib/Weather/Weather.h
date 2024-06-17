@@ -17,10 +17,12 @@ const uint8_t MAX_TIMESTAMP_SIZE = 20;
 // clang-format off
 struct WeatherData {
   char currISOTime[MAX_TIMESTAMP_SIZE];
+  uint8_t currWeatherCode;
   float currTemp;
+  float currHighTemp;
+  float currLowTemp;
   float currHumidity;
   bool currIsDay;
-  uint8_t currWeatherCode;
 
   char forecastISOTimes[MAX_FORECAST_DAYS][MAX_TIMESTAMP_SIZE];
   uint8_t forecastWeatherCodes[MAX_FORECAST_DAYS];
