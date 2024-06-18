@@ -16,24 +16,59 @@
 #include <LittleFS.h>
 #include <U8g2_for_Adafruit_GFX.h>
 
+// Useful for development as we skip the "Refreshing..." screen
+#define FAST_BOOT
+
 U8G2_FOR_ADAFRUIT_GFX u8g2;
+GFXcanvas1 canvas(800, 480);
 
 void displayBegin() {
   display.init(115200, true, 2, false);
-  u8g2.begin(display);
   display.setRotation(0);
-  display.setFont(&FreeMono9pt7b);
   display.setFullWindow();
   display.fillScreen(GxEPD_WHITE);
 
+  canvas.setRotation(0);
+  canvas.setFont(&FreeMono9pt7b);
+  canvas.fillScreen(GxEPD_WHITE);
+
+  u8g2.begin(canvas);
   u8g2.setFontMode(1);
   u8g2.setFontDirection(0);
   u8g2.setBackgroundColor(GxEPD_WHITE);
   u8g2.setForegroundColor(GxEPD_BLACK);
 }
 
+void blitCanvasToDisplay() {
+  uint8_t pageTimes = 0;
+  const uint32_t startTime = millis();
+  display.setFullWindow();
+  do {
+    display.fillScreen(GxEPD_BLACK);
+    display.drawBitmap(0, 0, canvas.getBuffer(), 800, 480, GxEPD_WHITE);
+    pageTimes++;
+  } while (display.nextPage());
+  Serial.printf("Used %d pages to blit canvas to display in %d ms\n", pageTimes,
+                millis() - startTime);
+  // display.display(false);
+}
+
 void displayEnd() {
   display.hibernate();
+}
+
+void displayScaleArea(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+                      uint8_t scale) {
+  for (int16_t relY = h; relY >= 0; relY--) {
+    for (int16_t relX = w; relX >= 0; relX--) {
+      const uint16_t oldX = x + relX;
+      const uint16_t oldY = y + relY;
+      const uint16_t newX = x + relX * scale;
+      const uint16_t newY = y + relY * scale;
+      const bool color = canvas.getPixel(oldX, oldY);
+      canvas.fillRect(newX, newY, scale, scale, color);
+    }
+  }
 }
 
 uint16_t read16(fs::File& f) {
@@ -300,8 +335,7 @@ void displayBitmap(const char* filename, int16_t x, int16_t y) {
           // display.writeImage(output_row_mono_buffer, output_row_color_buffer,
           // x,
           //                    yrow, w, 1);
-          display.drawBitmap(x, yrow, output_row_mono_buffer, w, 1,
-                             GxEPD_BLACK);
+          canvas.drawBitmap(x, yrow, output_row_mono_buffer, w, 1, GxEPD_BLACK);
         } // end line
         // Serial.print("loaded in ");
         // Serial.print(millis() - startTime);
@@ -416,7 +450,7 @@ char* formatTemp(char* buf, size_t bufSize, float temp) {
 }
 
 void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
-  display.fillScreen(GxEPD_WHITE);
+  canvas.fillScreen(GxEPD_WHITE);
 
   u8g2.setCursor(30, 46);
   u8g2.print(geoData.name);
@@ -463,7 +497,7 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
     monthNames = MONTH_NAMES_CN;
     dayNames = DAY_NAMES_CN;
   }
-  const uint16_t y = 270;
+  const uint16_t endY = 350;
   for (uint8_t i = 1; i < MAX_FORECAST_DAYS - 1; i++) {
     const uint16_t x = 160 * (i - 1);
     const uint16_t centerX = x + 80;
@@ -471,28 +505,33 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
     const uint32_t time = weatherData.forecastUnixTimes[i];
 
     const char* dayName = weekdayNames[weekday(time)];
-    u8g2.setCursor(cursorXFromCenter(dayName, centerX), y);
+    u8g2.setCursor(cursorXFromCenter(dayName, centerX), endY - 16 * 3);
     u8g2.print(dayName);
 
     char dateBuf[16];
     snprintf(dateBuf, sizeof(dateBuf), "%s %s", monthNames[month(time)],
              dayNames[day(time)]);
-    u8g2.setCursor(cursorXFromCenter(dateBuf, centerX), y + 20);
+    u8g2.setCursor(cursorXFromCenter(dateBuf, centerX), endY - 16 * 2);
     u8g2.print(dateBuf);
 
-    char tempsBuf[16];
-    formatTemp(tempsBuf, sizeof(tempsBuf), weatherData.forecastLowTemps[i]);
-    u8g2.setCursor(cursorXFromCenter(tempsBuf, centerX), y + 40);
-    u8g2.print(tempsBuf);
-    formatTemp(tempsBuf, sizeof(tempsBuf), weatherData.forecastHighTemps[i]);
-    u8g2.setCursor(cursorXFromCenter(tempsBuf, centerX), y + 60);
+    char tempsBuf[20];
+    if (strcmp(tempUnitSetting, TEMP_UNIT_CELSIUS) == 0) {
+      snprintf(tempsBuf, sizeof(tempsBuf), "%.0f°C  %.0f°C",
+               round(weatherData.forecastLowTemps[i]),
+               round(weatherData.forecastHighTemps[i]));
+    } else {
+      snprintf(tempsBuf, sizeof(tempsBuf), "%.0f°F  %.0f°F",
+               round(weatherData.forecastLowTemps[i]),
+               round(weatherData.forecastHighTemps[i]));
+    }
+    u8g2.setCursor(cursorXFromCenter(tempsBuf, centerX), endY - 16);
     u8g2.print(tempsBuf);
 
     displayBitmap(WMOCodeToFilename(weatherData.forecastWeatherCodes[i], true),
-                  x + 30, y + 80);
+                  x + 30, endY);
   }
 
-  display.display(false);
+  blitCanvasToDisplay();
 }
 
 void printWakeupReason() {
@@ -556,6 +595,11 @@ void setup() {
                    "update was a success");
   }
 
+#ifdef FAST_BOOT
+  Serial.println("FAST_BOOT enabled, skipping refresh screen");
+  showRefresh = false;
+#endif
+
   loadSettings();
   printSettings();
 
@@ -563,19 +607,18 @@ void setup() {
   loadFontForCurrentLang();
 
   if (showRefresh) {
-    display.fillScreen(GxEPD_WHITE);
+    canvas.fillScreen(GxEPD_WHITE);
     u8g2.setCursor(30, 46);
     // TODO: Localize with localizedStrings.h, add icon
     u8g2.print("Refreshing...");
-    display.display(false);
+    blitCanvasToDisplay();
   }
 
   if (!LittleFS.begin()) {
     Serial.println("Failed to mount file system");
   } else {
-    Serial.println("File system mounted successfully");
-    Serial.printf("Used %d of %d kb\n", LittleFS.usedBytes() / 1024,
-                  LittleFS.totalBytes() / 1024);
+    Serial.printf("File system mounted successfully - used %d of %d kb\n",
+                  LittleFS.usedBytes() / 1024, LittleFS.totalBytes() / 1024);
   }
 
   if (isTouched()) {
@@ -599,7 +642,7 @@ void setup() {
 
   const int8_t connectRes =
       connectToWiFi([](char* ssid, char* password, char* ip) {
-        display.fillScreen(GxEPD_WHITE);
+        canvas.fillScreen(GxEPD_WHITE);
         u8g2.setCursor(30, 46);
         // TODO: Localize with localizedStrings.h, add icon
         u8g2.print("Configuration AP launched.");
@@ -631,7 +674,7 @@ void setup() {
         u8g2.setCursor(30, 246);
         u8g2.print("configuration WiFi network.");
 
-        display.display(false);
+        blitCanvasToDisplay();
       });
   bool showWeather = true;
   switch (connectRes) {
@@ -639,7 +682,7 @@ void setup() {
     case WIFI_CONNECTION_SUCCESS:
       break;
     case WIFI_CONNECTION_SUCCESS_CONFIG: {
-      display.fillScreen(GxEPD_WHITE);
+      canvas.fillScreen(GxEPD_WHITE);
       // In case the user changed it
       loadFontForCurrentLang();
       u8g2.setCursor(30, 46);
@@ -647,30 +690,30 @@ void setup() {
       u8g2.print("Successfully configured!");
       u8g2.setCursor(30, 66);
       u8g2.print("Refreshing...");
-      display.display(false);
+      blitCanvasToDisplay();
       break;
     }
     case WIFI_CONNECTION_ERROR: {
-      display.fillScreen(GxEPD_WHITE);
+      canvas.fillScreen(GxEPD_WHITE);
       u8g2.setCursor(30, 46);
       // TODO: Localize with localizedStrings.h, add icon
       u8g2.print("Failed to connect to WiFi!");
       u8g2.setCursor(30, 66);
       u8g2.print("Hold the function button for 3 seconds to restart the WiFi "
                  "configuration process.");
-      display.display(false);
+      blitCanvasToDisplay();
       showWeather = false;
       break;
     }
     case WIFI_CONNECTION_ERROR_TIMEOUT: {
-      display.fillScreen(GxEPD_WHITE);
+      canvas.fillScreen(GxEPD_WHITE);
       u8g2.setCursor(30, 46);
       // TODO: Localize with localizedStrings.h, add icon
       u8g2.print("Configuration timed out!");
       u8g2.setCursor(30, 66);
       u8g2.print("Hold the function button for 3 seconds to restart the WiFi "
                  "configuration process.");
-      display.display(false);
+      blitCanvasToDisplay();
       showWeather = false;
       break;
     }
