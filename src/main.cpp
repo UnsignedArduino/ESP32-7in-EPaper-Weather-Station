@@ -434,8 +434,10 @@ const char* WMOCodeToLabel(uint8_t code) {
   const char** strings;
   if (strcmp(languageSetting, LANGUAGE_EN) == 0) {
     strings = WEATHERS_EN;
+  } else if (strcmp(languageSetting, LANGUAGE_CN_TRAD) == 0) {
+    strings = WEATHERS_CN_TRAD;
   } else {
-    strings = WEATHERS_CN;
+    strings = WEATHERS_CN_SIMP;
   }
   for (uint8_t i = 0; i < sizeof(codes) / sizeof(codes[0]); i++) {
     if (code == codes[i]) {
@@ -483,7 +485,8 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
   u8g2.setCursor(150, 80 + 34 + 16);
   if (strcmp(tempUnitSetting, TEMP_UNIT_CELSIUS) == 0) {
     snprintf(currTempBuf, sizeof(currTempBuf), "%.0f°C (%.0f°C - %.0f°C)",
-             round(weatherData.currTemp), round(weatherData.currLowTemp), round(weatherData.currHighTemp));
+             round(weatherData.currTemp), round(weatherData.currLowTemp),
+             round(weatherData.currHighTemp));
   } else {
     snprintf(currTempBuf, sizeof(currTempBuf), "%.0f°F (%.0f°F - %.0f°F)",
              round(weatherData.currTemp), round(weatherData.currLowTemp),
@@ -506,10 +509,14 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
     weekdayNames = WEEKDAY_NAMES_EN;
     monthNames = MONTH_NAMES_EN;
     dayNames = DAY_NAMES_EN;
+  } else if (strcmp(languageSetting, LANGUAGE_CN_TRAD) == 0) {
+    weekdayNames = WEEKDAY_NAMES_CN_TRAD;
+    monthNames = MONTH_NAMES_CN_TRAD;
+    dayNames = DAY_NAMES_CN_TRAD;
   } else {
-    weekdayNames = WEEKDAY_NAMES_CN;
-    monthNames = MONTH_NAMES_CN;
-    dayNames = DAY_NAMES_CN;
+    weekdayNames = WEEKDAY_NAMES_CN_SIMP;
+    monthNames = MONTH_NAMES_CN_SIMP;
+    dayNames = DAY_NAMES_CN_SIMP;
   }
   const uint16_t endY = 350;
   for (uint8_t i = 1; i < MAX_FORECAST_DAYS - 1; i++) {
@@ -584,8 +591,12 @@ void loadFontForCurrentLang() {
   if (strcmp(languageSetting, LANGUAGE_EN) == 0) {
     Serial.println("Using GNU Unifont (for EN)");
     u8g2.setFont(u8g2_font_unifont_tf);
+  } else if (strcmp(languageSetting, LANGUAGE_CN_TRAD) == 0) {
+    Serial.println("Using WenQuanYi Micro Hei (for CN_TRAD)");
+    // TODO: Find font that actually has the characters we need
+    u8g2.setFont(u8g2_font_wqy16_t_gb2312);
   } else {
-    Serial.println("Using WenQuanYi Micro Hei (for CN)");
+    Serial.println("Using WenQuanYi Micro Hei (for CN_SIMP)");
     u8g2.setFont(u8g2_font_wqy16_t_gb2312);
   }
 }

@@ -33,10 +33,11 @@ extern const char* PRECIPITATION_UNITS[MAX_PRECIPITATION_UNITS];
 extern const char* PRECIPITATION_UNITS_LABELS[MAX_PRECIPITATION_UNITS];
 extern char precipitationUnitSetting[MAX_PRECIPITATION_UNIT_LENGTH];
 
-const uint8_t MAX_LANGUAGE_LENGTH = 3;
-const uint8_t MAX_LANGUAGES = 2;
+const uint8_t MAX_LANGUAGE_LENGTH = 8;
+const uint8_t MAX_LANGUAGES = 3;
 extern const char* LANGUAGE_EN;
-extern const char* LANGUAGE_CN;
+extern const char* LANGUAGE_CN_SIMP;
+extern const char* LANGUAGE_CN_TRAD;
 extern const char* LANGUAGES[MAX_LANGUAGES];
 extern const char* LANGUAGES_LABELS[MAX_LANGUAGES];
 extern char languageSetting[MAX_LANGUAGE_LENGTH];

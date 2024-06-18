@@ -31,9 +31,13 @@ const char* PRECIPITATION_UNITS_LABELS[MAX_PRECIPITATION_UNITS] = {
 char precipitationUnitSetting[MAX_PRECIPITATION_UNIT_LENGTH] = "mm";
 
 const char* LANGUAGE_EN = "en";
-const char* LANGUAGE_CN = "cn";
-const char* LANGUAGES[MAX_LANGUAGES] = {LANGUAGE_EN, LANGUAGE_CN};
-const char* LANGUAGES_LABELS[MAX_LANGUAGES] = {"English (en)", "Chinese (cn)"};
+const char* LANGUAGE_CN_SIMP = "cn_simp";
+const char* LANGUAGE_CN_TRAD = "cn_trad";
+const char* LANGUAGES[MAX_LANGUAGES] = {LANGUAGE_EN, LANGUAGE_CN_SIMP,
+                                        LANGUAGE_CN_TRAD};
+const char* LANGUAGES_LABELS[MAX_LANGUAGES] = {"English (en)",
+                                               "Simplified Chinese (cn_simp)",
+                                               "Traditional Chinese (cn_trad)"};
 char languageSetting[MAX_LANGUAGE_LENGTH] = "en";
 
 bool saveSettings() {
