@@ -3,24 +3,18 @@
 #include "Touch.h"
 #include "Weather.h"
 #include "WiFiConnection.h"
-#include "config.h"
 #include "localizedStrings.h"
-#include "pins.h"
-#include <Adafruit_EPD.h>
 #include <Adafruit_GFX.h>
 #include <Arduino.h>
-#include <Fonts/FreeMono9pt7b.h>
-#include <Fonts/FreeMonoBold9pt7b.h>
 #include <GxEPD2_BW.h>
 #include <GxEPD2_display_selection_new_style.h>
 #include <LittleFS.h>
 #include <U8g2_for_Adafruit_GFX.h>
 
-// TODO:
-// - Refactor to move stuff to separate files
-// - Fix traditional Chinese font missing characters
-// - Add deep sleep
-// - Switch from touch button to physical button
+// TODO: Refactor to move stuff to separate files
+// TODO: Fix traditional Chinese font missing characters
+// TODO: Add deep sleep
+// TODO: Switch from touch button to physical button
 
 U8G2_FOR_ADAFRUIT_GFX u8g2;
 GFXcanvas1 canvas(800, 480);
@@ -32,7 +26,6 @@ void displayBegin() {
   display.fillScreen(GxEPD_WHITE);
 
   canvas.setRotation(0);
-  canvas.setFont(&FreeMono9pt7b);
   canvas.fillScreen(GxEPD_WHITE);
 
   u8g2.begin(canvas);
@@ -104,7 +97,7 @@ void displayBitmap(const char* filename, int16_t x, int16_t y) {
   static const uint16_t input_buffer_pixels = 800; // may affect performance
 
   static const uint16_t max_row_width =
-      1872; // for up to 7.8" display 1872x1404
+    1872; // for up to 7.8" display 1872x1404
   static const uint16_t max_palette_pixels = 256; // for depth <= 8
 
   uint8_t input_buffer[3 * input_buffer_pixels]; // up to depth 24
@@ -205,8 +198,8 @@ void displayBitmap(const char* filename, int16_t x, int16_t y) {
             }
             file.read();
             whitish = with_color
-                          ? ((red > 0x80) && (green > 0x80) && (blue > 0x80))
-                          : ((red + green + blue) > 3 * 0x80); // whitish
+                        ? ((red > 0x80) && (green > 0x80) && (blue > 0x80))
+                        : ((red + green + blue) > 3 * 0x80); // whitish
             colored = (red > 0xF0) || ((green > 0xF0) &&
                                        (blue > 0xF0)); // reddish or yellowish?
             if (0 == pn % 8)
@@ -218,7 +211,7 @@ void displayBitmap(const char* filename, int16_t x, int16_t y) {
           }
         }
         uint32_t rowPosition =
-            flip ? imageOffset + (height - h) * rowSize : imageOffset;
+          flip ? imageOffset + (height - h) * rowSize : imageOffset;
         for (uint16_t row = 0; row < h;
              row++, rowPosition += rowSize) // for each line
         {
@@ -238,9 +231,9 @@ void displayBitmap(const char* filename, int16_t x, int16_t y) {
                                     // multiple of 3)
             {
               in_bytes =
-                  file.read(input_buffer, in_remain > sizeof(input_buffer)
-                                              ? sizeof(input_buffer)
-                                              : in_remain);
+                file.read(input_buffer, in_remain > sizeof(input_buffer)
+                                          ? sizeof(input_buffer)
+                                          : in_remain);
               in_remain -= in_bytes;
               in_idx = 0;
             }
@@ -255,13 +248,12 @@ void displayBitmap(const char* filename, int16_t x, int16_t y) {
                   red = 255 - red;
                 }
                 in_idx++; // skip alpha
-                whitish =
-                    with_color
-                        ? ((red > 0x80) && (green > 0x80) && (blue > 0x80))
-                        : ((red + green + blue) > 3 * 0x80); // whitish
+                whitish = with_color
+                            ? ((red > 0x80) && (green > 0x80) && (blue > 0x80))
+                            : ((red + green + blue) > 3 * 0x80); // whitish
                 colored =
-                    (red > 0xF0) ||
-                    ((green > 0xF0) && (blue > 0xF0)); // reddish or yellowish?
+                  (red > 0xF0) ||
+                  ((green > 0xF0) && (blue > 0xF0)); // reddish or yellowish?
                 break;
               case 24:
                 blue = input_buffer[in_idx++];
@@ -272,13 +264,12 @@ void displayBitmap(const char* filename, int16_t x, int16_t y) {
                   green = 255 - green;
                   red = 255 - red;
                 }
-                whitish =
-                    with_color
-                        ? ((red > 0x80) && (green > 0x80) && (blue > 0x80))
-                        : ((red + green + blue) > 3 * 0x80); // whitish
+                whitish = with_color
+                            ? ((red > 0x80) && (green > 0x80) && (blue > 0x80))
+                            : ((red + green + blue) > 3 * 0x80); // whitish
                 colored =
-                    (red > 0xF0) ||
-                    ((green > 0xF0) && (blue > 0xF0)); // reddish or yellowish?
+                  (red > 0xF0) ||
+                  ((green > 0xF0) && (blue > 0xF0)); // reddish or yellowish?
                 break;
               case 16: {
                 uint8_t lsb = input_buffer[in_idx++];
@@ -299,13 +290,12 @@ void displayBitmap(const char* filename, int16_t x, int16_t y) {
                   green = 255 - green;
                   red = 255 - red;
                 }
-                whitish =
-                    with_color
-                        ? ((red > 0x80) && (green > 0x80) && (blue > 0x80))
-                        : ((red + green + blue) > 3 * 0x80); // whitish
+                whitish = with_color
+                            ? ((red > 0x80) && (green > 0x80) && (blue > 0x80))
+                            : ((red + green + blue) > 3 * 0x80); // whitish
                 colored =
-                    (red > 0xF0) ||
-                    ((green > 0xF0) && (blue > 0xF0)); // reddish or yellowish?
+                  (red > 0xF0) ||
+                  ((green > 0xF0) && (blue > 0xF0)); // reddish or yellowish?
               } break;
               case 1:
               case 2:
@@ -476,8 +466,8 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
   }
 
   displayBitmap(
-      WMOCodeToFilename(weatherData.currWeatherCode, weatherData.currIsDay), 30,
-      80);
+    WMOCodeToFilename(weatherData.currWeatherCode, weatherData.currIsDay), 30,
+    80);
 
   u8g2.setCursor(150, 80 + 16);
   const char* currWeatherLabel = WMOCodeToLabel(weatherData.currWeatherCode);
@@ -651,40 +641,40 @@ void setup() {
   }
 
   const int8_t connectRes =
-      connectToWiFi([](char* ssid, char* password, char* ip) {
-        canvas.fillScreen(GxEPD_WHITE);
-        u8g2.setCursor(30, 46);
-        u8g2.print("Configuration AP launched.");
-        u8g2.setCursor(30, 66);
-        u8g2.print(
-            "Join the WiFi network in order to configure the weather station.");
-        u8g2.setCursor(30, 106);
+    connectToWiFi([](char* ssid, char* password, char* ip) {
+      canvas.fillScreen(GxEPD_WHITE);
+      u8g2.setCursor(30, 46);
+      u8g2.print("Configuration AP launched.");
+      u8g2.setCursor(30, 66);
+      u8g2.print(
+        "Join the WiFi network in order to configure the weather station.");
+      u8g2.setCursor(30, 106);
 
-        u8g2.print("SSID: ");
-        u8g2.print(ssid);
-        u8g2.setCursor(30, 126);
-        u8g2.print("Password: ");
-        u8g2.print(password);
-        u8g2.setCursor(30, 146);
-        u8g2.print("IP: ");
-        u8g2.print(ip);
-        u8g2.print(
-            " (may pop up automatically or you may be asked to \"sign in\")");
+      u8g2.print("SSID: ");
+      u8g2.print(ssid);
+      u8g2.setCursor(30, 126);
+      u8g2.print("Password: ");
+      u8g2.print(password);
+      u8g2.setCursor(30, 146);
+      u8g2.print("IP: ");
+      u8g2.print(ip);
+      u8g2.print(
+        " (may pop up automatically or you may be asked to \"sign in\")");
 
-        u8g2.setCursor(30, 186);
-        u8g2.print("Once on the page with titled \"WiFiManager\", hit the "
-                   "\"Configure WiFi\" button.");
-        u8g2.setCursor(30, 206);
-        u8g2.print("Select a WiFi network and type in the password. Change the "
-                   "other options to configure to ");
-        u8g2.setCursor(30, 226);
-        u8g2.print("your liking. Then hit the \"Save\" button. You will be "
-                   "disconnected from the ");
-        u8g2.setCursor(30, 246);
-        u8g2.print("configuration WiFi network.");
+      u8g2.setCursor(30, 186);
+      u8g2.print("Once on the page with titled \"WiFiManager\", hit the "
+                 "\"Configure WiFi\" button.");
+      u8g2.setCursor(30, 206);
+      u8g2.print("Select a WiFi network and type in the password. Change the "
+                 "other options to configure to ");
+      u8g2.setCursor(30, 226);
+      u8g2.print("your liking. Then hit the \"Save\" button. You will be "
+                 "disconnected from the ");
+      u8g2.setCursor(30, 246);
+      u8g2.print("configuration WiFi network.");
 
-        blitCanvasToDisplay();
-      });
+      blitCanvasToDisplay();
+    });
   bool showWeather = true;
   switch (connectRes) {
     default:
@@ -734,7 +724,7 @@ void setup() {
 
     WeatherData weatherData;
     int8_t result =
-        getWeather(geocodeData.latitude, geocodeData.longitude, weatherData);
+      getWeather(geocodeData.latitude, geocodeData.longitude, weatherData);
 
     disconnectFromWiFi();
 

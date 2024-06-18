@@ -1,8 +1,6 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef ESP32_7IN_EPAPER_WEATHER_STATION_CONFIG_H
+#define ESP32_7IN_EPAPER_WEATHER_STATION_CONFIG_H
 
 #include <Arduino.h>
 
-const uint32_t UPDATE_TIME = 60; // Minutes
-
-#endif
+#endif // ESP32_7IN_EPAPER_WEATHER_STATION_CONFIG_H

@@ -17,17 +17,11 @@ Wiring (using Firebeetle ESP32 dev board)
     - Display config: "B" (0.47R)
     - SPI: 0 (4 line SPI)
 
-- Function button (touch pin): IO 15
-  Used for refreshing the display when touched or resetting WiFi settings
-
 */
 
 #ifndef PINS_H
 #define PINS_H
 
 #include <Arduino.h>
-
-const uint8_t PIN_TOUCH = T3; // IO 15
-const touch_value_t PIN_TOUCH_THRESHOLD = 40;
 
 #endif
