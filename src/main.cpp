@@ -16,8 +16,11 @@
 #include <LittleFS.h>
 #include <U8g2_for_Adafruit_GFX.h>
 
-// Useful for development as we skip the "Refreshing..." screen
-#define FAST_BOOT
+// TODO:
+// - Refactor to move stuff to separate files
+// - Fix traditional Chinese font missing characters
+// - Add deep sleep
+// - Switch from touch button to physical button
 
 U8G2_FOR_ADAFRUIT_GFX u8g2;
 GFXcanvas1 canvas(800, 480);
@@ -593,15 +596,12 @@ void loadFontForCurrentLang() {
     u8g2.setFont(u8g2_font_unifont_tf);
   } else if (strcmp(languageSetting, LANGUAGE_CN_TRAD) == 0) {
     Serial.println("Using WenQuanYi Micro Hei (for CN_TRAD)");
-    // TODO: Find font that actually has the characters we need
     u8g2.setFont(u8g2_font_wqy16_t_gb2312);
   } else {
     Serial.println("Using WenQuanYi Micro Hei (for CN_SIMP)");
     u8g2.setFont(u8g2_font_wqy16_t_gb2312);
   }
 }
-
-RTC_DATA_ATTR bool lastUpdateSuccess = false;
 
 void setup() {
   Serial.begin(115200);
@@ -613,38 +613,16 @@ void setup() {
 
   Serial.printf("Efuse MAC: 0x%012llX\n", ESP.getEfuseMac());
 
-  bool showRefresh = true;
-
-  printWakeupReason();
-
-  // TODO: Add touch pad wake up
-  esp_sleep_enable_timer_wakeup(UPDATE_TIME * 60 * 1000000ULL);
-
-  if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER &&
-      lastUpdateSuccess) {
-    showRefresh = false;
-    Serial.println("Not showing refresh because of timer wakeup and last "
-                   "update was a success");
-  }
-
-#ifdef FAST_BOOT
-  Serial.println("FAST_BOOT enabled, skipping refresh screen");
-  showRefresh = false;
-#endif
-
   loadSettings();
   printSettings();
 
   displayBegin();
   loadFontForCurrentLang();
 
-  if (showRefresh) {
-    canvas.fillScreen(GxEPD_WHITE);
-    u8g2.setCursor(30, 46);
-    // TODO: Localize with localizedStrings.h, add icon
-    u8g2.print("Refreshing...");
-    blitCanvasToDisplay();
-  }
+  canvas.fillScreen(GxEPD_WHITE);
+  u8g2.setCursor(30, 46);
+  u8g2.print("Refreshing...");
+  blitCanvasToDisplay();
 
   if (!LittleFS.begin()) {
     Serial.println("Failed to mount file system");
@@ -676,7 +654,6 @@ void setup() {
       connectToWiFi([](char* ssid, char* password, char* ip) {
         canvas.fillScreen(GxEPD_WHITE);
         u8g2.setCursor(30, 46);
-        // TODO: Localize with localizedStrings.h, add icon
         u8g2.print("Configuration AP launched.");
         u8g2.setCursor(30, 66);
         u8g2.print(
@@ -718,7 +695,6 @@ void setup() {
       // In case the user changed it
       loadFontForCurrentLang();
       u8g2.setCursor(30, 46);
-      // TODO: Localize with localizedStrings.h, add icon
       u8g2.print("Successfully configured!");
       u8g2.setCursor(30, 66);
       u8g2.print("Refreshing...");
@@ -728,7 +704,6 @@ void setup() {
     case WIFI_CONNECTION_ERROR: {
       canvas.fillScreen(GxEPD_WHITE);
       u8g2.setCursor(30, 46);
-      // TODO: Localize with localizedStrings.h, add icon
       u8g2.print("Failed to connect to WiFi!");
       u8g2.setCursor(30, 66);
       u8g2.print("Hold the function button for 3 seconds to restart the WiFi "
@@ -740,7 +715,6 @@ void setup() {
     case WIFI_CONNECTION_ERROR_TIMEOUT: {
       canvas.fillScreen(GxEPD_WHITE);
       u8g2.setCursor(30, 46);
-      // TODO: Localize with localizedStrings.h, add icon
       u8g2.print("Configuration timed out!");
       u8g2.setCursor(30, 66);
       u8g2.print("Hold the function button for 3 seconds to restart the WiFi "
@@ -779,11 +753,6 @@ void setup() {
   Serial.printf("  WiFi connect finished at ms %lu\n", timeFinishWiFiConnect);
   Serial.printf("  Data fetch finished at ms %lu\n", timeFinishDataFetch);
   Serial.printf("  Display finished at ms %lu\n", timeFinishDisplay);
-
-  lastUpdateSuccess = true;
-
-  Serial.printf("Updating again in %d minutes\n", UPDATE_TIME);
-  esp_deep_sleep_start();
 }
 
 void loop() {}
