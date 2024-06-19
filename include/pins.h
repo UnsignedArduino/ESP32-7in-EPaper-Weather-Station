@@ -17,11 +17,17 @@ Wiring (using Firebeetle ESP32 dev board)
     - Display config: "B" (0.47R)
     - SPI: 0 (4 line SPI)
 
+- Function button (a simple push button)
+  - One side to GND
+  - Other side to D4 (IO 27)
+
 */
 
 #ifndef PINS_H
 #define PINS_H
 
 #include <Arduino.h>
+
+const gpio_num_t FUNCTION_BTN_PIN = GPIO_NUM_27;
 
 #endif

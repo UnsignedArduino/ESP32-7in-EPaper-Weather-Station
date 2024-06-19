@@ -3,16 +3,19 @@
 #include "Settings.h"
 #include "Weather.h"
 #include "WiFiConnection.h"
+#include "pins.h"
 #include "unifont_custom.h"
 #include <Arduino.h>
+#include <Button.h>
 #include <LittleFS.h>
 
 // TODO: Add deep sleep
-// TODO: Switch from touch button to physical button that wakes up and resets
-//  WiFI
+// TODO: Switch from touch button to physical button that wakes up
 // TODO: Add better error handling
 // TODO: Add icons to some text
 // TODO: Add battery level and warnings
+
+Button functionBtn(FUNCTION_BTN_PIN);
 
 char* formatTemp(char* buf, size_t bufSize, float temp) {
   if (strcmp(tempUnitSetting, TEMP_UNIT_CELSIUS) == 0) {
@@ -178,6 +181,8 @@ void setup() {
 
   Serial.printf("Efuse MAC: 0x%012llX\n", ESP.getEfuseMac());
 
+  functionBtn.begin();
+
   loadSettings();
   printSettings();
 
@@ -198,7 +203,43 @@ void setup() {
                   LittleFS.usedBytes() / 1024, LittleFS.totalBytes() / 1024);
   }
 
-  //  resetWiFiSettings();
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "Simplify"
+  if (functionBtn.read() == Button::PRESSED) {
+    Serial.println("Detected button press, hold for 3 seconds to reset");
+    display.fillScreen(GxEPD_WHITE);
+    u8g2.setCursor(30, 46);
+    u8g2.print(
+      "Hold the function button for 3 seconds to reset WiFi settings. ");
+    u8g2.setCursor(30, 66);
+    u8g2.print("Otherwise, release the button to continue as normal.");
+    display.display(false);
+    const uint32_t holdUntil = millis() + 3000;
+    while (millis() < holdUntil) {
+      if (functionBtn.read() == Button::PRESSED) {
+        break;
+      }
+    }
+    if (functionBtn.read() == Button::PRESSED) {
+      Serial.println("Button held long enough, resetting WiFi settings");
+      resetWiFiSettings();
+      display.fillScreen(GxEPD_WHITE);
+      u8g2.setCursor(30, 46);
+      u8g2.print("WiFi settings reset. ");
+      u8g2.setCursor(30, 66);
+      u8g2.print("Starting configuration AP...");
+      display.display(false);
+    } else {
+      Serial.println("Button released prematurely, continuing");
+      display.fillScreen(GxEPD_WHITE);
+      u8g2.setCursor(30, 46);
+      u8g2.print("WiFi settings not reset. ");
+      u8g2.setCursor(30, 66);
+      u8g2.print("Refreshing...");
+      display.display(false);
+    }
+  }
+#pragma clang diagnostic pop
 
   const int8_t connectRes =
     connectToWiFi([](char* ssid, char* password, char* ip) {
