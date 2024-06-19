@@ -3,15 +3,16 @@
 #include "Settings.h"
 #include "Weather.h"
 #include "WiFiConnection.h"
+#include "unifont_custom.h"
 #include <Arduino.h>
 #include <LittleFS.h>
 
-// TODO: Fix traditional Chinese font missing characters
 // TODO: Add deep sleep
-// TODO: Switch from touch button to physical button
+// TODO: Switch from touch button to physical button that wakes up and resets
+//  WiFI
 // TODO: Add better error handling
 // TODO: Add icons to some text
-// TODO: Add battery level
+// TODO: Add battery level and warnings
 
 char* formatTemp(char* buf, size_t bufSize, float temp) {
   if (strcmp(tempUnitSetting, TEMP_UNIT_CELSIUS) == 0) {
@@ -153,17 +154,18 @@ void printWakeupReason() {
   }
 }
 
-void loadFontForCurrentLang() {
-  if (strcmp(languageSetting, LANGUAGE_EN) == 0) {
-    Serial.println("Using GNU Unifont (for EN)");
-    u8g2.setFont(u8g2_font_unifont_tf);
-  } else if (strcmp(languageSetting, LANGUAGE_CN_TRAD) == 0) {
-    Serial.println("Using WenQuanYi Micro Hei (for CN_TRAD)");
-    u8g2.setFont(u8g2_font_wqy16_t_gb2312);
-  } else {
-    Serial.println("Using WenQuanYi Micro Hei (for CN_SIMP)");
-    u8g2.setFont(u8g2_font_wqy16_t_gb2312);
-  }
+void fontTest() {
+  display.fillScreen(GxEPD_WHITE);
+  u8g2.setCursor(0, 0);
+  u8g2.println("Hello, world!");
+  const char* testString = " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~0123456789\n"
+                           "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
+                           "abcdefghijklmnopqrstuvwxyz\n\n"
+                           "一七三中九二云五份八六冰冻十四多大天小日"
+                           "星晴月朗期未毛知粒细部雨雪雲雷雹雾霜霧\n"
+                           "°";
+  u8g2.println(testString);
+  display.display(false);
 }
 
 void setup() {
@@ -180,7 +182,9 @@ void setup() {
   printSettings();
 
   displayBegin();
-  loadFontForCurrentLang();
+  Serial.println("Loading custom GNU Unifont for all languages");
+  u8g2.setFont(unifont_custom);
+  //  fontTest();
 
   display.fillScreen(GxEPD_WHITE);
   u8g2.setCursor(30, 46);
@@ -238,8 +242,6 @@ void setup() {
       break;
     case WIFI_CONNECTION_SUCCESS_CONFIG: {
       display.fillScreen(GxEPD_WHITE);
-      // In case the user changed it
-      loadFontForCurrentLang();
       u8g2.setCursor(30, 46);
       u8g2.print("Successfully configured!");
       u8g2.setCursor(30, 66);

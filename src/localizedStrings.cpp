@@ -1,3 +1,5 @@
+#include "localizedStrings.h"
+
 // ENGLISH
 #ifdef FULL_NAMES
 const char* WEEKDAY_NAMES_EN[] = {"",        "Sunday",    "Monday",
