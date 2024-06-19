@@ -24,15 +24,20 @@ bool updateTime(int32_t utcOffset) {
   Serial.printf("Configuring time with UTC offset %+d\n", utcOffset / 3600);
   configTime(utcOffset, 0, NTP_SERVER);
   struct tm timeInfo {};
-  if (!getLocalTime(&timeInfo)) {
-    Serial.println("Failed to obtain time");
-    return false;
+  for (uint8_t i = 0; i < 3; i++) {
+    Serial.printf("Attempt %d of 3 to obtain time\n", i + 1);
+    if (!getLocalTime(&timeInfo)) {
+      Serial.println("Failed to obtain time");
+      delay(1000);
+    } else {
+      break;
+    }
   }
   Serial.print("Time is ");
   Serial.println(&timeInfo, "%A, %B %d %Y %H:%M:%S");
   time_t now;
   time(&now);
-  setTime(now);
+  setTime(now + utcOffset);
   return true;
 }
 
@@ -128,7 +133,7 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
   u8g2.print(currHumidBuf);
   displayScaleArea(150, 80 + 34 * 2, u8g2.getUTF8Width(currHumidBuf), 16, 2);
 
-  const uint16_t endY = 350;
+  const uint16_t endY = 350 - 16;
   for (uint8_t i = 1; i < MAX_FORECAST_DAYS - 1; i++) {
     const uint16_t x = 160 * (i - 1);
     const uint16_t centerX = x + 80;
@@ -168,6 +173,10 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
     displayBitmap(WMOCodeToFilename(weatherData.forecastWeatherCodes[i], true),
                   x + 30, endY);
   }
+
+  u8g2.setCursor(30, endY + 100 + 32);
+  u8g2.printf("Last updated %s%s at %02d:%02d", monthNames[month()],
+              dayNames[day()], hour(), minute());
 
   display.display(false);
 }
