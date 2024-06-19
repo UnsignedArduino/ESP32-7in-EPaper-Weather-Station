@@ -2,6 +2,7 @@
 #define WEATHER_H
 
 #include "Settings.h"
+#include "localizedStrings.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <TimeLib.h>
@@ -17,7 +18,7 @@ const uint8_t MAX_TIMESTAMP_SIZE = 20;
 
 // clang-format off
 struct WeatherData {
-  uint32_t currUnixTime;
+  time_t currUnixTime;
   uint8_t currWeatherCode;
   float currTemp;
   float currHighTemp;
@@ -25,7 +26,7 @@ struct WeatherData {
   float currHumidity;
   bool currIsDay;
 
-  uint32_t forecastUnixTimes[MAX_FORECAST_DAYS];
+  time_t forecastUnixTimes[MAX_FORECAST_DAYS];
   uint8_t forecastWeatherCodes[MAX_FORECAST_DAYS];
   float forecastHighTemps[MAX_FORECAST_DAYS];
   float forecastLowTemps[MAX_FORECAST_DAYS];
@@ -34,5 +35,8 @@ struct WeatherData {
 void printWeather(WeatherData& data);
 
 int8_t getWeather(float latitude, float longitude, WeatherData& data);
+
+const char* WMOCodeToFilename(uint8_t code, bool isDay);
+const char* WMOCodeToLabel(uint8_t code);
 
 #endif
