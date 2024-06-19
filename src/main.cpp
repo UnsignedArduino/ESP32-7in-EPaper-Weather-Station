@@ -9,6 +9,9 @@
 // TODO: Fix traditional Chinese font missing characters
 // TODO: Add deep sleep
 // TODO: Switch from touch button to physical button
+// TODO: Add better error handling
+// TODO: Add icons to some text
+// TODO: Add battery level
 
 char* formatTemp(char* buf, size_t bufSize, float temp) {
   if (strcmp(tempUnitSetting, TEMP_UNIT_CELSIUS) == 0) {
@@ -20,7 +23,7 @@ char* formatTemp(char* buf, size_t bufSize, float temp) {
 }
 
 void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
-  canvas.fillScreen(GxEPD_WHITE);
+  display.fillScreen(GxEPD_WHITE);
 
   u8g2.setCursor(30, 46);
   u8g2.print(geoData.name);
@@ -96,7 +99,7 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
                      u8g2.getUTF8Width(dayName), 16, 2);
 
     char dateBuf[16];
-    snprintf(dateBuf, sizeof(dateBuf), "%s %s", monthNames[month(time)],
+    snprintf(dateBuf, sizeof(dateBuf), "%s%s", monthNames[month(time)],
              dayNames[day(time)]);
     u8g2.setCursor(cursorXFromCenter(dateBuf, centerX, 2),
                    endY - 34 * 3 + 16 - 10);
@@ -122,7 +125,7 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
                   x + 30, endY);
   }
 
-  blitCanvasToDisplay();
+  display.display(false);
 }
 
 void printWakeupReason() {
@@ -179,10 +182,10 @@ void setup() {
   displayBegin();
   loadFontForCurrentLang();
 
-  canvas.fillScreen(GxEPD_WHITE);
+  display.fillScreen(GxEPD_WHITE);
   u8g2.setCursor(30, 46);
   u8g2.print("Refreshing...");
-  blitCanvasToDisplay();
+  display.display(false);
 
   if (!LittleFS.begin()) {
     Serial.println("Failed to mount file system");
@@ -195,7 +198,7 @@ void setup() {
 
   const int8_t connectRes =
     connectToWiFi([](char* ssid, char* password, char* ip) {
-      canvas.fillScreen(GxEPD_WHITE);
+      display.fillScreen(GxEPD_WHITE);
       u8g2.setCursor(30, 46);
       u8g2.print("Configuration AP launched.");
       u8g2.setCursor(30, 66);
@@ -226,7 +229,7 @@ void setup() {
       u8g2.setCursor(30, 246);
       u8g2.print("configuration WiFi network.");
 
-      blitCanvasToDisplay();
+      display.display(false);
     });
   bool showWeather = true;
   switch (connectRes) {
@@ -234,35 +237,35 @@ void setup() {
     case WIFI_CONNECTION_SUCCESS:
       break;
     case WIFI_CONNECTION_SUCCESS_CONFIG: {
-      canvas.fillScreen(GxEPD_WHITE);
+      display.fillScreen(GxEPD_WHITE);
       // In case the user changed it
       loadFontForCurrentLang();
       u8g2.setCursor(30, 46);
       u8g2.print("Successfully configured!");
       u8g2.setCursor(30, 66);
       u8g2.print("Refreshing...");
-      blitCanvasToDisplay();
+      display.display(false);
       break;
     }
     case WIFI_CONNECTION_ERROR: {
-      canvas.fillScreen(GxEPD_WHITE);
+      display.fillScreen(GxEPD_WHITE);
       u8g2.setCursor(30, 46);
       u8g2.print("Failed to connect to WiFi!");
       u8g2.setCursor(30, 66);
       u8g2.print("Hold the function button for 3 seconds to restart the WiFi "
                  "configuration process.");
-      blitCanvasToDisplay();
+      display.display(false);
       showWeather = false;
       break;
     }
     case WIFI_CONNECTION_ERROR_TIMEOUT: {
-      canvas.fillScreen(GxEPD_WHITE);
+      display.fillScreen(GxEPD_WHITE);
       u8g2.setCursor(30, 46);
       u8g2.print("Configuration timed out!");
       u8g2.setCursor(30, 66);
       u8g2.print("Hold the function button for 3 seconds to restart the WiFi "
                  "configuration process.");
-      blitCanvasToDisplay();
+      display.display(false);
       showWeather = false;
       break;
     }

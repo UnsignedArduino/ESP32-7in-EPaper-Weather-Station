@@ -5,7 +5,6 @@ GxEPD2_DISPLAY_CLASS<GxEPD2_DRIVER_CLASS, MAX_HEIGHT(GxEPD2_DRIVER_CLASS)>
     GxEPD2_DRIVER_CLASS(/*CS=5*/ EPD_CS, /*DC=*/17, /*RST=*/16,
                         /*BUSY=*/4)); // my suggested wiring and proto board
 U8G2_FOR_ADAFRUIT_GFX u8g2;
-GFXcanvas1 canvas(800, 480);
 
 void displayBegin() {
   display.init(115200, true, 2, false);
@@ -13,10 +12,7 @@ void displayBegin() {
   display.setFullWindow();
   display.fillScreen(GxEPD_WHITE);
 
-  canvas.setRotation(0);
-  canvas.fillScreen(GxEPD_WHITE);
-
-  u8g2.begin(canvas);
+  u8g2.begin(display);
   u8g2.setFontMode(1);
   u8g2.setFontDirection(0);
   u8g2.setBackgroundColor(GxEPD_WHITE);
@@ -31,8 +27,8 @@ void displayScaleArea(int16_t x, int16_t y, int16_t w, int16_t h,
       const int16_t oldY = y + relY;
       const int16_t newX = x + relX * scale;
       const int16_t newY = y + relY * scale;
-      const bool color = canvas.getPixel(oldX, oldY);
-      canvas.fillRect(newX, newY, scale, scale, color);
+      const bool color = display.getPixel(oldX, oldY);
+      display.fillRect(newX, newY, scale, scale, color);
     }
   }
 }
@@ -298,7 +294,8 @@ void displayBitmap(const char* filename, int16_t x, int16_t y) {
           // display.writeImage(output_row_mono_buffer, output_row_color_buffer,
           // x,
           //                    yrow, w, 1);
-          canvas.drawBitmap(x, yrow, output_row_mono_buffer, w, 1, GxEPD_BLACK);
+          display.drawBitmap(x, yrow, output_row_mono_buffer, w, 1,
+                             GxEPD_BLACK);
         } // end line
         // Serial.print("loaded in ");
         // Serial.print(millis() - startTime);
@@ -321,20 +318,6 @@ void displayBitmap(const char* filename, int16_t x, int16_t y) {
     Serial.printf("Error display bitmap %s\n", filename);
     Serial.println("bitmap format not handled.");
   }
-}
-
-void blitCanvasToDisplay() {
-  uint8_t pageTimes = 0;
-  const uint32_t startTime = millis();
-  display.setFullWindow();
-  do {
-    display.fillScreen(GxEPD_BLACK);
-    display.drawBitmap(0, 0, canvas.getBuffer(), 800, 480, GxEPD_WHITE);
-    pageTimes++;
-  } while (display.nextPage());
-  Serial.printf("Used %d pages to blit canvas to display in %d ms\n", pageTimes,
-                millis() - startTime);
-  // display.display(false);
 }
 
 void displayEnd() {
