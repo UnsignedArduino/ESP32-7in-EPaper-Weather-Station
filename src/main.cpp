@@ -3,19 +3,20 @@
 #include "Settings.h"
 #include "Weather.h"
 #include "WiFiConnection.h"
+#include "config.h"
 #include "pins.h"
 #include "unifont_custom.h"
 #include <Arduino.h>
 #include <Button.h>
 #include <LittleFS.h>
 
-// TODO: Add deep sleep
-// TODO: Switch from touch button to physical button that wakes up
 // TODO: Add better error handling
 // TODO: Add icons to some text
 // TODO: Add battery level and warnings
 
 Button functionBtn(FUNCTION_BTN_PIN);
+
+RTC_DATA_ATTR bool lastUpdateSuccess = false;
 
 char* formatTemp(char* buf, size_t bufSize, float temp) {
   if (strcmp(tempUnitSetting, TEMP_UNIT_CELSIUS) == 0) {
@@ -191,16 +192,26 @@ void setup() {
   u8g2.setFont(unifont_custom);
   //  fontTest();
 
-  display.fillScreen(GxEPD_WHITE);
-  u8g2.setCursor(30, 46);
-  u8g2.print("Refreshing...");
-  display.display(false);
-
   if (!LittleFS.begin()) {
     Serial.println("Failed to mount file system");
   } else {
     Serial.printf("File system mounted successfully - used %d of %d kb\n",
                   LittleFS.usedBytes() / 1024, LittleFS.totalBytes() / 1024);
+  }
+
+  bool showBootup = true;
+
+  printWakeupReason();
+  if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER &&
+      lastUpdateSuccess) {
+    showBootup = false;
+  }
+
+  if (showBootup) {
+    display.fillScreen(GxEPD_WHITE);
+    u8g2.setCursor(30, 46);
+    u8g2.print("Refreshing...");
+    display.display(false);
   }
 
 #pragma clang diagnostic push
@@ -330,8 +341,10 @@ void setup() {
     timeFinishDataFetch = millis();
 
     displayWeather(geocodeData, weatherData);
+    lastUpdateSuccess = true;
   } else {
     disconnectFromWiFi();
+    lastUpdateSuccess = false;
   }
 
   displayEnd();
@@ -342,6 +355,11 @@ void setup() {
   Serial.printf("  WiFi connect finished at ms %u\n", timeFinishWiFiConnect);
   Serial.printf("  Data fetch finished at ms %u\n", timeFinishDataFetch);
   Serial.printf("  Display finished at ms %u\n", timeFinishDisplay);
+
+  Serial.printf("Going to sleep for %d minutes\n", UPDATE_TIME);
+  esp_sleep_enable_ext0_wakeup(FUNCTION_BTN_PIN, 0);
+  esp_sleep_enable_timer_wakeup(UPDATE_TIME * 60 * 1000000ULL);
+  esp_deep_sleep_start();
 }
 
 void loop() {}
