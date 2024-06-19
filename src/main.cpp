@@ -5,10 +5,12 @@
 #include "WiFiConnection.h"
 #include "config.h"
 #include "pins.h"
+#include "time.h"
 #include "unifont_custom.h"
 #include <Arduino.h>
 #include <Button.h>
 #include <LittleFS.h>
+#include <WiFi.h>
 
 // TODO: Add better error handling
 // TODO: Add icons to some text
@@ -17,6 +19,22 @@
 Button functionBtn(FUNCTION_BTN_PIN);
 
 RTC_DATA_ATTR bool lastUpdateSuccess = false;
+
+bool updateTime(int32_t utcOffset) {
+  Serial.printf("Configuring time with UTC offset %+d\n", utcOffset / 3600);
+  configTime(utcOffset, 0, NTP_SERVER);
+  struct tm timeInfo {};
+  if (!getLocalTime(&timeInfo)) {
+    Serial.println("Failed to obtain time");
+    return false;
+  }
+  Serial.print("Time is ");
+  Serial.println(&timeInfo, "%A, %B %d %Y %H:%M:%S");
+  time_t now;
+  time(&now);
+  setTime(now);
+  return true;
+}
 
 char* formatTemp(char* buf, size_t bufSize, float temp) {
   if (strcmp(tempUnitSetting, TEMP_UNIT_CELSIUS) == 0) {
@@ -28,17 +46,54 @@ char* formatTemp(char* buf, size_t bufSize, float temp) {
 }
 
 void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
+  const char** weekdayNames;
+  const char** monthNames;
+  const char** dayNames;
+  if (strcmp(languageSetting, LANGUAGE_EN) == 0) {
+    weekdayNames = WEEKDAY_NAMES_EN;
+    monthNames = MONTH_NAMES_EN;
+    dayNames = DAY_NAMES_EN;
+  } else if (strcmp(languageSetting, LANGUAGE_CN_TRAD) == 0) {
+    weekdayNames = WEEKDAY_NAMES_CN_TRAD;
+    monthNames = MONTH_NAMES_CN_TRAD;
+    dayNames = DAY_NAMES_CN_TRAD;
+  } else {
+    weekdayNames = WEEKDAY_NAMES_CN_SIMP;
+    monthNames = MONTH_NAMES_CN_SIMP;
+    dayNames = DAY_NAMES_CN_SIMP;
+  }
+
   display.fillScreen(GxEPD_WHITE);
 
+  char todayDateBuf[32];
+  snprintf(todayDateBuf, sizeof(todayDateBuf), "%s, %s%s",
+           weekdayNames[weekday()], monthNames[month()], dayNames[day()]);
   u8g2.setCursor(30, 46);
-  u8g2.print(geoData.name);
+  u8g2.print(todayDateBuf);
+  displayScaleArea(30, 30, u8g2.getUTF8Width(todayDateBuf), 16, 2);
+
+  int16_t currLocX;
   char* locationParts[] = {geoData.name,   geoData.admin4, geoData.admin3,
                            geoData.admin2, geoData.admin1, geoData.country};
+  uint16_t longestLength =
+    u8g2.getUTF8Width(locationParts[0]) * 2; // scale of first part
+  for (char* locationPart : locationParts) {
+    const uint16_t length = u8g2.getUTF8Width(locationPart);
+    if (length > longestLength) {
+      longestLength = length;
+    }
+  }
+  currLocX = 800 - 30 - longestLength;
+  u8g2.setCursor(currLocX, 46);
+  u8g2.print(geoData.name);
+  displayScaleArea(currLocX, 30, u8g2.getUTF8Width(geoData.name), 16, 2);
+  int16_t currLocY = 30 + 34 + 16;
   for (uint32_t i = 1; i < (sizeof(locationParts) / sizeof(locationParts[0]));
        i++) {
     if (strlen(locationParts[i]) > 0 &&
         strcasestr(locationParts[i], locationParts[i - 1]) == nullptr) {
-      u8g2.print(", ");
+      u8g2.setCursor(currLocX, currLocY);
+      currLocY += 16;
       u8g2.print(locationParts[i]);
     }
   }
@@ -73,22 +128,6 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
   u8g2.print(currHumidBuf);
   displayScaleArea(150, 80 + 34 * 2, u8g2.getUTF8Width(currHumidBuf), 16, 2);
 
-  const char** weekdayNames;
-  const char** monthNames;
-  const char** dayNames;
-  if (strcmp(languageSetting, LANGUAGE_EN) == 0) {
-    weekdayNames = WEEKDAY_NAMES_EN;
-    monthNames = MONTH_NAMES_EN;
-    dayNames = DAY_NAMES_EN;
-  } else if (strcmp(languageSetting, LANGUAGE_CN_TRAD) == 0) {
-    weekdayNames = WEEKDAY_NAMES_CN_TRAD;
-    monthNames = MONTH_NAMES_CN_TRAD;
-    dayNames = DAY_NAMES_CN_TRAD;
-  } else {
-    weekdayNames = WEEKDAY_NAMES_CN_SIMP;
-    monthNames = MONTH_NAMES_CN_SIMP;
-    dayNames = DAY_NAMES_CN_SIMP;
-  }
   const uint16_t endY = 350;
   for (uint8_t i = 1; i < MAX_FORECAST_DAYS - 1; i++) {
     const uint16_t x = 160 * (i - 1);
@@ -333,8 +372,9 @@ void setup() {
     getGeocode(cityOrPostalCodeSetting, geocodeData);
 
     WeatherData weatherData{};
-    int8_t result =
-      getWeather(geocodeData.latitude, geocodeData.longitude, weatherData);
+    getWeather(geocodeData.latitude, geocodeData.longitude, weatherData);
+
+    updateTime(weatherData.utcOffset);
 
     disconnectFromWiFi();
 

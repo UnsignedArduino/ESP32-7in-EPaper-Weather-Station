@@ -19,6 +19,7 @@ const uint8_t MAX_TIMESTAMP_SIZE = 20;
 // clang-format off
 struct WeatherData {
   time_t currUnixTime;
+  int32_t utcOffset;
   uint8_t currWeatherCode;
   float currTemp;
   float currHighTemp;

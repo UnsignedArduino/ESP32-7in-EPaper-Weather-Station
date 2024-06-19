@@ -51,7 +51,7 @@ int8_t connectToWiFi(void (*onConfigAPLaunch)(char*, char*, char*)) {
   const uint16_t MAX_HTML_SIZE = 1024;
 
   WiFiManagerParameter customCityOrPostalCode(
-      "cityOrPostalCode", "City or postal code", cityOrPostalCodeSetting, 32);
+    "cityOrPostalCode", "City or postal code", cityOrPostalCodeSetting, 32);
   wm.addParameter(&customCityOrPostalCode);
 
   char* customTempUnitHTML = (char*)malloc(MAX_HTML_SIZE);
@@ -61,18 +61,18 @@ int8_t connectToWiFi(void (*onConfigAPLaunch)(char*, char*, char*)) {
   WiFiManagerParameter customTempUnitInject(customTempUnitHTML);
   wm.addParameter(&customTempUnitInject);
   WiFiManagerParameter customTempUnit(
-      "tempUnitID", "Temperature unit: (Should be hidden)", "", 2);
+    "tempUnitID", "Temperature unit: (Should be hidden)", "", 2);
   wm.addParameter(&customTempUnit);
 
   char* customWindSpeedUnitHTML = (char*)malloc(MAX_HTML_SIZE);
   generateHTMLForSelect(
-      customWindSpeedUnitHTML, MAX_HTML_SIZE, "Wind speed unit",
-      "windSpeedUnitInjectID", "windSpeedUnitID", WIND_SPEED_UNITS,
-      WIND_SPEED_UNITS_LABELS, MAX_WIND_SPEED_UNITS, windSpeedUnitSetting);
+    customWindSpeedUnitHTML, MAX_HTML_SIZE, "Wind speed unit",
+    "windSpeedUnitInjectID", "windSpeedUnitID", WIND_SPEED_UNITS,
+    WIND_SPEED_UNITS_LABELS, MAX_WIND_SPEED_UNITS, windSpeedUnitSetting);
   WiFiManagerParameter customWindSpeedUnitInject(customWindSpeedUnitHTML);
   wm.addParameter(&customWindSpeedUnitInject);
   WiFiManagerParameter customWindSpeedUnit(
-      "windSpeedUnitID", "Wind speed unit: (Should be hidden)", "", 4);
+    "windSpeedUnitID", "Wind speed unit: (Should be hidden)", "", 4);
   wm.addParameter(&customWindSpeedUnit);
 
   char* customPrecipitationUnitHTML = (char*)malloc(MAX_HTML_SIZE);
@@ -82,10 +82,10 @@ int8_t connectToWiFi(void (*onConfigAPLaunch)(char*, char*, char*)) {
                         PRECIPITATION_UNITS_LABELS, MAX_PRECIPITATION_UNITS,
                         precipitationUnitSetting);
   WiFiManagerParameter customPrecipitationUnitInject(
-      customPrecipitationUnitHTML);
+    customPrecipitationUnitHTML);
   wm.addParameter(&customPrecipitationUnitInject);
   WiFiManagerParameter customPrecipitationUnit(
-      "precipitationUnitID", "Precipitation unit: (Should be hidden)", "", 3);
+    "precipitationUnitID", "Precipitation unit: (Should be hidden)", "", 3);
   wm.addParameter(&customPrecipitationUnit);
 
   char* customLanguageHTML = (char*)malloc(MAX_HTML_SIZE);

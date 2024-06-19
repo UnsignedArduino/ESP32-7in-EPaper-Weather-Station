@@ -12,7 +12,7 @@ void printWeather(WeatherData& data) {
   Serial.println("Current weather:");
   Serial.printf("  Time: ");
   printUnixTime(data.currUnixTime);
-  Serial.println();
+  Serial.printf(" (UTC%+ld)\n", data.utcOffset / 3600);
   Serial.printf("  Weather code: %d\n", data.currWeatherCode);
   Serial.printf("  Temperature: %.1f\n", data.currTemp);
   Serial.printf("  High temp: %.1f\n", data.currHighTemp);
@@ -97,6 +97,8 @@ int8_t getWeather(float latitude, float longitude, WeatherData& data) {
     Serial.println(error.c_str());
     return GET_WEATHER_PARSE_FAIL;
   }
+
+  data.utcOffset = doc["utc_offset_seconds"];
 
   JsonObject current = doc["current"];
   data.currUnixTime = current["time"];
