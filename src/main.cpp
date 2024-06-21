@@ -92,12 +92,22 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
   u8g2.print(todayDateBuf);
   displayScaleArea(30, 30, u8g2.getUTF8Width(todayDateBuf), 16, 2);
 
+  char lastUpdatedBuf[48];
+  if (accurateTime) {
+    snprintf(lastUpdatedBuf, 48, "%s%s at %02d:%02d", monthNames[month()],
+             dayNames[day()], hour(), minute());
+  } else {
+    snprintf(lastUpdatedBuf, 48, "%s%s at ??:??", monthNames[month()],
+             dayNames[day()]);
+  }
+
   int16_t currLocX;
-  char* locationParts[] = {geoData.name,   geoData.admin4, geoData.admin3,
-                           geoData.admin2, geoData.admin1, geoData.country};
+  const char* parts[] = {geoData.name,   geoData.admin4, geoData.admin3,
+                         geoData.admin2, geoData.admin1, geoData.country,
+                         "\n",           "Last updated", lastUpdatedBuf};
   uint16_t longestLength =
-    u8g2.getUTF8Width(locationParts[0]) * 2; // scale of first part
-  for (char* locationPart : locationParts) {
+    u8g2.getUTF8Width(parts[0]) * 2; // scale of first part
+  for (const char* locationPart : parts) {
     const uint16_t length = u8g2.getUTF8Width(locationPart);
     if (length > longestLength) {
       longestLength = length;
@@ -105,30 +115,35 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
   }
   currLocX = 800 - 30 - longestLength;
   u8g2.setCursor(currLocX, 46);
-  u8g2.print(geoData.name);
+  u8g2.print(parts[0]);
   displayScaleArea(currLocX, 30, u8g2.getUTF8Width(geoData.name), 16, 2);
   int16_t currLocY = 30 + 34 + 16;
-  for (uint32_t i = 1; i < (sizeof(locationParts) / sizeof(locationParts[0]));
-       i++) {
-    if (strlen(locationParts[i]) > 0 &&
-        strcasestr(locationParts[i], locationParts[i - 1]) == nullptr) {
+  for (uint32_t i = 1; i < (sizeof(parts) / sizeof(parts[0])); i++) {
+    if (strlen(parts[i]) > 0 && strcasestr(parts[i], parts[i - 1]) == nullptr) {
       u8g2.setCursor(currLocX, currLocY);
       currLocY += 16;
-      u8g2.print(locationParts[i]);
+      u8g2.print(parts[i]);
     }
   }
 
+  // Today's date ends at y level 62
+  // The bitmap is 100x100
+  // The forecast starts at y level 204
+  // (204 + 62) / 2 - (100 / 2) = 83
+
+  const uint16_t y = 83;
+
   displayBitmap(
     WMOCodeToFilename(weatherData.currWeatherCode, weatherData.currIsDay), 30,
-    80);
+    y);
 
-  u8g2.setCursor(150, 80 + 16);
+  u8g2.setCursor(150, y + 16);
   const char* currWeatherLabel = WMOCodeToLabel(weatherData.currWeatherCode);
   u8g2.print(currWeatherLabel);
-  displayScaleArea(150, 80, u8g2.getUTF8Width(currWeatherLabel), 16, 2);
+  displayScaleArea(150, y, u8g2.getUTF8Width(currWeatherLabel), 16, 2);
 
   char currTempBuf[24];
-  u8g2.setCursor(150, 80 + 34 + 16);
+  u8g2.setCursor(150, y + 34 + 16);
   if (strcmp(tempUnitSetting, TEMP_UNIT_CELSIUS) == 0) {
     snprintf(currTempBuf, sizeof(currTempBuf), "%.0f°C (%.0f°C - %.0f°C)",
              round(weatherData.currTemp), round(weatherData.currLowTemp),
@@ -139,14 +154,14 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
              round(weatherData.currHighTemp));
   }
   u8g2.print(currTempBuf);
-  displayScaleArea(150, 80 + 34, u8g2.getUTF8Width(currTempBuf), 16, 2);
+  displayScaleArea(150, y + 34, u8g2.getUTF8Width(currTempBuf), 16, 2);
 
   char currHumidBuf[8];
   snprintf(currHumidBuf, sizeof(currHumidBuf), "%.0f%%",
            round(weatherData.currHumidity));
-  u8g2.setCursor(150, 80 + 34 * 2 + 16);
+  u8g2.setCursor(150, y + 34 * 2 + 16);
   u8g2.print(currHumidBuf);
-  displayScaleArea(150, 80 + 34 * 2, u8g2.getUTF8Width(currHumidBuf), 16, 2);
+  displayScaleArea(150, y + 34 * 2, u8g2.getUTF8Width(currHumidBuf), 16, 2);
 
   const uint16_t endY = 350 - 16;
   for (uint8_t i = 1; i < MAX_FORECAST_DAYS - 1; i++) {
@@ -187,15 +202,6 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
 
     displayBitmap(WMOCodeToFilename(weatherData.forecastWeatherCodes[i], true),
                   x + 30, endY);
-  }
-
-  u8g2.setCursor(30, endY + 100 + 32);
-  if (accurateTime) {
-    u8g2.printf("Last updated %s%s at %02d:%02d", monthNames[month()],
-                dayNames[day()], hour(), minute());
-  } else {
-    u8g2.printf("Last updated %s%s at ??:??", monthNames[month()],
-                dayNames[day()]);
   }
 
   display.display(false);
@@ -279,7 +285,7 @@ void setup() {
     display.fillScreen(GxEPD_WHITE);
     u8g2.setCursor(30, 46);
     u8g2.print("Refreshing...");
-    u8g2.setCursor(30, 450 + 16);
+    u8g2.setCursor(30, 450);
     u8g2.print("Weather data by Open-Meteo.com");
     display.display(false);
   }
@@ -317,7 +323,7 @@ void setup() {
       u8g2.print("WiFi settings not reset. ");
       u8g2.setCursor(30, 66);
       u8g2.print("Refreshing...");
-      u8g2.setCursor(30, 450 + 16);
+      u8g2.setCursor(30, 450);
       u8g2.print("Weather data by Open-Meteo.com");
       display.display(false);
     }
@@ -370,7 +376,7 @@ void setup() {
       u8g2.print("Successfully configured!");
       u8g2.setCursor(30, 66);
       u8g2.print("Refreshing...");
-      u8g2.setCursor(30, 450 + 16);
+      u8g2.setCursor(30, 450);
       u8g2.print("Weather data by Open-Meteo.com");
       display.display(false);
       break;
