@@ -1,3 +1,9 @@
+// For debugging
+// #define NO_REFRESH_TEXT
+// #define FORCE_WIFI_CONNECTION_ERROR
+// #define FORCE_GEOCODE_CONNECTION_FAIL
+// #define FORCE_WEATHER_CONNECTION_FAIL
+
 #include "Display.h"
 #include "Geocoding.h"
 #include "Settings.h"
@@ -13,7 +19,6 @@
 #include <WiFi.h>
 #include <driver/rtc_io.h>
 
-// TODO: Add better error handling
 // TODO: Add battery level and warnings
 // TODO: Add icons to some text
 
@@ -275,6 +280,10 @@ void setup() {
 
   bool showBootup = true;
 
+#ifdef NO_REFRESH_TEXT
+  showBootup = false;
+#endif
+
   printWakeupReason();
   if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER &&
       lastUpdateSuccess) {
@@ -330,6 +339,9 @@ void setup() {
   }
 #pragma clang diagnostic pop
 
+#ifdef FORCE_WIFI_CONNECTION_ERROR
+  const int8_t connectRes = WIFI_CONNECTION_ERROR;
+#else
   const int8_t connectRes =
     connectToWiFi([](char* ssid, char* password, char* ip) {
       display.fillScreen(GxEPD_WHITE);
@@ -365,6 +377,7 @@ void setup() {
 
       display.display(false);
     });
+#endif
   bool showWeather = true;
   switch (connectRes) {
     default:
@@ -386,8 +399,11 @@ void setup() {
       u8g2.setCursor(30, 46);
       u8g2.print("Failed to connect to WiFi!");
       u8g2.setCursor(30, 66);
-      u8g2.print("Hold the function button for 3 seconds to restart the WiFi "
-                 "configuration process.");
+      u8g2.printf("Retrying in %d minutes - Hold the function button for 3 "
+                  "seconds to restart the WiFi ",
+                  RETRY_TIME);
+      u8g2.setCursor(30, 86);
+      u8g2.print("configuration process now.");
       display.display(false);
       showWeather = false;
       break;
@@ -395,10 +411,13 @@ void setup() {
     case WIFI_CONNECTION_ERROR_TIMEOUT: {
       display.fillScreen(GxEPD_WHITE);
       u8g2.setCursor(30, 46);
-      u8g2.print("Configuration timed out!");
+      u8g2.print("WiFi timed out!");
       u8g2.setCursor(30, 66);
-      u8g2.print("Hold the function button for 3 seconds to restart the WiFi "
-                 "configuration process.");
+      u8g2.printf("Retrying in %d minutes - Hold the function button for 3 "
+                  "seconds to restart the WiFi ",
+                  RETRY_TIME);
+      u8g2.setCursor(30, 86);
+      u8g2.print("configuration process now.");
       display.display(false);
       showWeather = false;
       break;
@@ -406,30 +425,89 @@ void setup() {
   }
 
   const uint32_t timeFinishWiFiConnect = millis();
-  uint32_t timeFinishDataFetch = millis();
 
+  GeocodeData geocodeData{};
   if (showWeather) {
-    GeocodeData geocodeData{};
-    getGeocode(cityOrPostalCodeSetting, geocodeData);
+#ifdef FORCE_GEOCODE_CONNECTION_FAIL
+    const int8_t geocodeResult = GET_COORDINATE_CONNECTION_FAIL;
+#else
+    const int8_t geocodeResult =
+      getGeocode(cityOrPostalCodeSetting, geocodeData);
+#endif
 
-    WeatherData weatherData{};
-    getWeather(geocodeData.latitude, geocodeData.longitude, weatherData);
+    if (!(geocodeResult == GET_COORDINATE_SUCCESS ||
+          geocodeResult == GET_COORDINATE_SUCCESS_CACHE)) {
+      showWeather = false;
+      display.fillScreen(GxEPD_WHITE);
+      u8g2.setCursor(30, 46);
+      switch (geocodeResult) { // NOLINT(*-multiway-paths-covered)
+        case GET_COORDINATE_CONNECTION_FAIL: {
+          u8g2.print("Failed to connect to the geocoding API!");
+          break;
+        }
+        case GET_COORDINATE_CONNECTION_TIMEOUT: {
+          u8g2.print("Geocoding API timed out!");
+          break;
+        }
+        case GET_COORDINATE_PARSE_FAIL: {
+          u8g2.print("Failed to parse geocoding API response!");
+          break;
+        }
+      }
+      u8g2.setCursor(30, 66);
+      u8g2.printf(
+        "Retrying in %d minutes - Press the function button to try again now.",
+        RETRY_TIME);
+      display.display(false);
+    }
+  }
+
+  WeatherData weatherData{};
+  if (showWeather) {
+#ifdef FORCE_WEATHER_CONNECTION_FAIL
+    const int8_t weatherResult = GET_WEATHER_CONNECTION_FAIL;
+#else
+    const int8_t weatherResult =
+      getWeather(geocodeData.latitude, geocodeData.longitude, weatherData);
+#endif
+
+    if (weatherResult != GET_WEATHER_SUCCESS) {
+      showWeather = false;
+      display.fillScreen(GxEPD_WHITE);
+      u8g2.setCursor(30, 46);
+      switch (weatherResult) { // NOLINT(*-multiway-paths-covered)
+        case GET_WEATHER_CONNECTION_FAIL: {
+          u8g2.print("Failed to connect to the weather API!");
+          break;
+        }
+        case GET_WEATHER_CONNECTION_TIMEOUT: {
+          u8g2.print("Weather API timed out!");
+          break;
+        }
+        case GET_WEATHER_PARSE_FAIL: {
+          u8g2.print("Failed to parse weather API response!");
+          break;
+        }
+      }
+      u8g2.setCursor(30, 66);
+      u8g2.printf(
+        "Retrying in %d minutes - Press the function button to try again now.",
+        RETRY_TIME);
+      display.display(false);
+    }
 
     updateTime(weatherData.utcOffset, weatherData.currUnixTime);
+  }
 
-    disconnectFromWiFi();
+  disconnectFromWiFi();
+  const uint32_t timeFinishDataFetch = millis();
 
-    timeFinishDataFetch = millis();
-
+  if (showWeather) {
     displayWeather(geocodeData, weatherData);
     lastUpdateSuccess = true;
-  } else {
-    disconnectFromWiFi();
-    lastUpdateSuccess = false;
   }
 
   displayEnd();
-
   const uint32_t timeFinishDisplay = millis();
 
   Serial.println("Timings:");
@@ -441,9 +519,11 @@ void setup() {
   gpio_hold_en(GPIO_NUM_2);
   gpio_deep_sleep_hold_en();
 
-  Serial.printf("Going to sleep for %d minutes\n", UPDATE_TIME);
   esp_sleep_enable_ext0_wakeup(FUNCTION_BTN_PIN, 0);
-  esp_sleep_enable_timer_wakeup(UPDATE_TIME * 60 * 1000000ULL);
+  Serial.printf("Going to sleep for %d minutes\n",
+                (lastUpdateSuccess ? UPDATE_TIME : RETRY_TIME));
+  esp_sleep_enable_timer_wakeup((lastUpdateSuccess ? UPDATE_TIME : RETRY_TIME) *
+                                60 * 1000000ULL);
   esp_deep_sleep_start();
 }
 
