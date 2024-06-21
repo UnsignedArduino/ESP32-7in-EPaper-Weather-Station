@@ -11,33 +11,48 @@
 #include <Button.h>
 #include <LittleFS.h>
 #include <WiFi.h>
+#include <driver/rtc_io.h>
 
 // TODO: Add better error handling
-// TODO: Add icons to some text
 // TODO: Add battery level and warnings
+// TODO: Add icons to some text
 
 Button functionBtn(FUNCTION_BTN_PIN);
 
 RTC_DATA_ATTR bool lastUpdateSuccess = false;
 
-bool updateTime(int32_t utcOffset) {
+bool accurateTime = false;
+
+bool updateTime(int32_t utcOffset, time_t estimate) {
+  accurateTime = false;
   Serial.printf("Configuring time with UTC offset %+d\n", utcOffset / 3600);
-  configTime(utcOffset, 0, NTP_SERVER);
+  configTime(utcOffset, 0, NTP_SERVER_1, NTP_SERVER_2, NTP_SERVER_3);
   struct tm timeInfo {};
   for (uint8_t i = 0; i < 3; i++) {
-    Serial.printf("Attempt %d of 3 to obtain time\n", i + 1);
+    Serial.printf("Attempt %d of 3 to sync time\n", i + 1);
     if (!getLocalTime(&timeInfo)) {
-      Serial.println("Failed to obtain time");
+      Serial.println("Failed to sync time");
       delay(1000);
     } else {
+      accurateTime = true;
+      Serial.println("Successfully synced time");
       break;
     }
   }
-  Serial.print("Time is ");
-  Serial.println(&timeInfo, "%A, %B %d %Y %H:%M:%S");
-  time_t now;
-  time(&now);
-  setTime(now + utcOffset);
+  if (accurateTime) {
+    Serial.println("Time synced successfully");
+    time_t now;
+    time(&now);
+    setTime(now + utcOffset);
+    Serial.print("Time is ");
+    Serial.println(&timeInfo, "%A, %B %d %Y %H:%M:%S");
+  } else {
+    Serial.println("Failed to sync time, using estimate from Open-Meteo");
+    setTime(estimate + utcOffset);
+    Serial.printf("Estimate time is %s, %s %s %d %02d:%02d:%02d\n",
+                  dayShortStr(weekday()), monthShortStr(month()),
+                  dayShortStr(day()), year(), hour(), minute(), second());
+  }
   return true;
 }
 
@@ -175,8 +190,13 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
   }
 
   u8g2.setCursor(30, endY + 100 + 32);
-  u8g2.printf("Last updated %s%s at %02d:%02d", monthNames[month()],
-              dayNames[day()], hour(), minute());
+  if (accurateTime) {
+    u8g2.printf("Last updated %s%s at %02d:%02d", monthNames[month()],
+                dayNames[day()], hour(), minute());
+  } else {
+    u8g2.printf("Last updated %s%s at ??:??", monthNames[month()],
+                dayNames[day()]);
+  }
 
   display.display(false);
 }
@@ -259,6 +279,8 @@ void setup() {
     display.fillScreen(GxEPD_WHITE);
     u8g2.setCursor(30, 46);
     u8g2.print("Refreshing...");
+    u8g2.setCursor(30, 450 + 16);
+    u8g2.print("Weather data by Open-Meteo.com");
     display.display(false);
   }
 
@@ -295,6 +317,8 @@ void setup() {
       u8g2.print("WiFi settings not reset. ");
       u8g2.setCursor(30, 66);
       u8g2.print("Refreshing...");
+      u8g2.setCursor(30, 450 + 16);
+      u8g2.print("Weather data by Open-Meteo.com");
       display.display(false);
     }
   }
@@ -346,6 +370,8 @@ void setup() {
       u8g2.print("Successfully configured!");
       u8g2.setCursor(30, 66);
       u8g2.print("Refreshing...");
+      u8g2.setCursor(30, 450 + 16);
+      u8g2.print("Weather data by Open-Meteo.com");
       display.display(false);
       break;
     }
@@ -383,7 +409,7 @@ void setup() {
     WeatherData weatherData{};
     getWeather(geocodeData.latitude, geocodeData.longitude, weatherData);
 
-    updateTime(weatherData.utcOffset);
+    updateTime(weatherData.utcOffset, weatherData.currUnixTime);
 
     disconnectFromWiFi();
 
@@ -404,6 +430,10 @@ void setup() {
   Serial.printf("  WiFi connect finished at ms %u\n", timeFinishWiFiConnect);
   Serial.printf("  Data fetch finished at ms %u\n", timeFinishDataFetch);
   Serial.printf("  Display finished at ms %u\n", timeFinishDisplay);
+
+  // Sometimes the LED_BUILTIN is pulled up, no clue why
+  gpio_hold_en(GPIO_NUM_2);
+  gpio_deep_sleep_hold_en();
 
   Serial.printf("Going to sleep for %d minutes\n", UPDATE_TIME);
   esp_sleep_enable_ext0_wakeup(FUNCTION_BTN_PIN, 0);
