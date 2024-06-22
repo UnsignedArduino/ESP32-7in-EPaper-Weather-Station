@@ -1,5 +1,5 @@
 // For debugging
-#define NO_REFRESH_TEXT
+// #define NO_REFRESH_TEXT
 // #define FORCE_WIFI_CONNECTION_ERROR
 // #define FORCE_GEOCODE_CONNECTION_FAIL
 // #define FORCE_WEATHER_CONNECTION_FAIL
@@ -66,10 +66,7 @@ bool updateTime(int32_t utcOffset, time_t estimate) {
 void updateBatteryState() {
   uint16_t pack = analogReadMilliVolts(BATTERY_PIN) * 2;
   Serial.printf("Battery pack voltage: %d mV\n", pack);
-  // If (packVoltage, percentage) then (4.9, 100) to (3.8, 0) is our line
-  // percentage = ((100 - 0) / (4.9 - 3.8)) * (packVoltage - 3.8)
-  batteryPercent = constrain(
-    ((float)(100 - 0) / (float)(4900 - 3800)) * ((float)pack - 3800), 0, 100);
+  batteryPercent = constrain(map(pack, 3800, 4900, 0, 100), 0, 100);
   Serial.printf("Battery percentage: %d%%\n", batteryPercent);
 }
 
