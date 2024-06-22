@@ -21,6 +21,10 @@ void displayBegin() {
 
 void displayScaleArea(int16_t x, int16_t y, int16_t w, int16_t h,
                       uint8_t scale) {
+  //  display.drawRect(x - 1, y - 1, w + 2, h + 2, GxEPD_BLACK);
+  //  return;
+  x++;
+  y++;
   for (int16_t relY = h; relY >= 0; relY--) {
     for (int16_t relX = w; relX >= 0; relX--) {
       const int16_t oldX = x + relX;
