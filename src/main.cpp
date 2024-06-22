@@ -267,7 +267,9 @@ void setup() {
   digitalWrite(LED_BUILTIN, LOW);
 
   // Weird deep sleep bug workaround
-  delay(500);
+  delay(450);
+  displayEnablePower(); // Give the chip time to initialize
+  delay(50);
 
   Serial.printf("Efuse MAC: 0x%012llX\n", ESP.getEfuseMac());
 
@@ -534,6 +536,8 @@ void setup() {
   }
 
   displayEnd();
+  displayDisablePower();
+
   const uint32_t timeFinishDisplay = millis();
 
   Serial.println("Timings:");

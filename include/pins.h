@@ -3,7 +3,7 @@
 Wiring (using Firebeetle ESP32 dev board)
 
 - E-Paper display (Waveshare 7.5 inch, 800x480 pixels, black/white)
-  - PWR: 3.3v
+  - PWR: D3 (IO 26) - allows us to switch the display on/off
   - Busy: IO 4
   - RST: IO 16
   - DC: IO 17
@@ -11,7 +11,7 @@ Wiring (using Firebeetle ESP32 dev board)
   - CLK: SCK (IO 18)
   - DIN: MOSI (IO 23)
   - GND: GND
-  - VCC: 3.3v
+  - VCC: D2 (IO 25) - allows us to switch the display on/off
 
   - Driver HAT switches
     - Display config: "B" (0.47R)
@@ -38,5 +38,8 @@ Wiring (using Firebeetle ESP32 dev board)
 
 const gpio_num_t FUNCTION_BTN_PIN = GPIO_NUM_27;
 const gpio_num_t BATTERY_PIN = GPIO_NUM_36;
+
+const gpio_num_t EPD_PWR_PIN = GPIO_NUM_26;
+const gpio_num_t EPD_VCC_PIN = GPIO_NUM_25;
 
 #endif

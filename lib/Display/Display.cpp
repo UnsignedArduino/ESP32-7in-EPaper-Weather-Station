@@ -1,10 +1,23 @@
 #include "Display.h"
+#include "pins.h"
 
 GxEPD2_DISPLAY_CLASS<GxEPD2_DRIVER_CLASS, MAX_HEIGHT(GxEPD2_DRIVER_CLASS)>
   display(
     GxEPD2_DRIVER_CLASS(/*CS=5*/ EPD_CS, /*DC=*/17, /*RST=*/16,
                         /*BUSY=*/4)); // my suggested wiring and proto board
 U8G2_FOR_ADAFRUIT_GFX u8g2;
+
+void displayEnablePower() {
+  pinMode(EPD_PWR_PIN, OUTPUT);
+  pinMode(EPD_VCC_PIN, OUTPUT);
+  digitalWrite(EPD_PWR_PIN, HIGH);
+  digitalWrite(EPD_VCC_PIN, HIGH);
+}
+
+void displayDisablePower() {
+  digitalWrite(EPD_PWR_PIN, LOW);
+  digitalWrite(EPD_VCC_PIN, LOW);
+}
 
 void displayBegin() {
   display.init(115200, true, 2, false);

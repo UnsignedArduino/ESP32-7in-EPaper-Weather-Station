@@ -24,6 +24,9 @@ extern GxEPD2_DISPLAY_CLASS<GxEPD2_DRIVER_CLASS,
   display;
 extern U8G2_FOR_ADAFRUIT_GFX u8g2;
 
+void displayEnablePower();
+void displayDisablePower();
+
 void displayBegin();
 void displayScaleArea(int16_t x, int16_t y, int16_t w, int16_t h,
                       uint8_t scale);
