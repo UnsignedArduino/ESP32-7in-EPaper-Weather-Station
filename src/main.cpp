@@ -1,5 +1,5 @@
 // For debugging
-// #define NO_REFRESH_TEXT
+#define NO_REFRESH_TEXT
 // #define FORCE_WIFI_CONNECTION_ERROR
 // #define FORCE_GEOCODE_CONNECTION_FAIL
 // #define FORCE_WEATHER_CONNECTION_FAIL
@@ -25,6 +25,8 @@
 Button functionBtn(FUNCTION_BTN_PIN);
 
 RTC_DATA_ATTR bool lastUpdateSuccess = false;
+
+uint8_t batteryPercent = 0;
 
 bool accurateTime = false;
 
@@ -59,6 +61,16 @@ bool updateTime(int32_t utcOffset, time_t estimate) {
                   dayShortStr(day()), year(), hour(), minute(), second());
   }
   return true;
+}
+
+void updateBatteryState() {
+  uint16_t pack = analogReadMilliVolts(BATTERY_PIN) * 2;
+  Serial.printf("Battery pack voltage: %d mV\n", pack);
+  // If (packVoltage, percentage) then (4.9, 100) to (3.8, 0) is our line
+  // percentage = ((100 - 0) / (4.9 - 3.8)) * (packVoltage - 3.8)
+  batteryPercent = constrain(
+    ((float)(100 - 0) / (float)(4900 - 3800)) * ((float)pack - 3800), 0, 100);
+  Serial.printf("Battery percentage: %d%%\n", batteryPercent);
 }
 
 char* formatTemp(char* buf, size_t bufSize, float temp) {
@@ -99,19 +111,20 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
 
   char lastUpdatedBuf[48];
   if (accurateTime) {
-    snprintf(lastUpdatedBuf, 48, "%s%s at %02d:%02d", monthNames[month()],
-             dayNames[day()], hour(), minute());
+    snprintf(lastUpdatedBuf, 48, "Last updated at %02d:%02d", hour(), minute());
   } else {
-    snprintf(lastUpdatedBuf, 48, "%s%s at ??:??", monthNames[month()],
-             dayNames[day()]);
+    snprintf(lastUpdatedBuf, 48, "Last updated  at ??:??");
   }
+
+  char batteryBuf[32];
+  snprintf(batteryBuf, sizeof(batteryBuf), "Battery at %d%%", batteryPercent);
 
   int16_t currLocX;
   const char* parts[] = {geoData.name,   geoData.admin4, geoData.admin3,
                          geoData.admin2, geoData.admin1, geoData.country,
-                         "\n",           "Last updated", lastUpdatedBuf};
+                         "\n",           lastUpdatedBuf, batteryBuf};
   uint16_t longestLength =
-    u8g2.getUTF8Width(parts[0]) * 2; // scale of first part
+    (u8g2.getUTF8Width(parts[0])) * 2; // scale of first part
   for (const char* locationPart : parts) {
     const uint16_t length = u8g2.getUTF8Width(locationPart);
     if (length > longestLength) {
@@ -276,6 +289,19 @@ void setup() {
   } else {
     Serial.printf("File system mounted successfully - used %d of %d kb\n",
                   LittleFS.usedBytes() / 1024, LittleFS.totalBytes() / 1024);
+  }
+
+  updateBatteryState();
+
+  if (batteryPercent < 5) {
+    display.fillScreen(GxEPD_WHITE);
+    u8g2.setCursor(30, 46);
+    u8g2.print("Battery is low!");
+    u8g2.setCursor(30, 66);
+    u8g2.print("Please replace the batteries.");
+    display.display(false);
+    displayEnd();
+    esp_deep_sleep_start();
   }
 
   bool showBootup = true;
@@ -500,6 +526,9 @@ void setup() {
   }
 
   disconnectFromWiFi();
+
+  updateBatteryState();
+
   const uint32_t timeFinishDataFetch = millis();
 
   if (showWeather) {

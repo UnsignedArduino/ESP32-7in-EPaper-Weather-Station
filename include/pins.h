@@ -21,6 +21,14 @@ Wiring (using Firebeetle ESP32 dev board)
   - One side to GND
   - Other side to D4 (IO 27)
 
+- Battery (3 AA batteries in series)
+  - Positive to VCC
+  - Negative to GND
+
+- Battery reader through resistor divider (1M and 1M)
+  - Voltage divider end to VCC
+  - Middle to A0
+  - Other voltage divider end to GND
 */
 
 #ifndef PINS_H
@@ -29,5 +37,6 @@ Wiring (using Firebeetle ESP32 dev board)
 #include <Arduino.h>
 
 const gpio_num_t FUNCTION_BTN_PIN = GPIO_NUM_27;
+const gpio_num_t BATTERY_PIN = GPIO_NUM_36;
 
 #endif
