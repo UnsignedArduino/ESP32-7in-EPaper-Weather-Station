@@ -3,6 +3,7 @@
 // #define FORCE_WIFI_CONNECTION_ERROR
 // #define FORCE_GEOCODE_CONNECTION_FAIL
 // #define FORCE_WEATHER_CONNECTION_FAIL
+// #define BLINK_ON_BATTERY_READ
 
 #include "Display.h"
 #include "Geocoding.h"
@@ -19,7 +20,6 @@
 #include <WiFi.h>
 #include <driver/rtc_io.h>
 
-// TODO: Add battery level and warnings
 // TODO: Add icons to some text
 
 Button functionBtn(FUNCTION_BTN_PIN);
@@ -64,6 +64,12 @@ bool updateTime(int32_t utcOffset, time_t estimate) {
 }
 
 void updateBatteryState() {
+#ifdef BLINK_ON_BATTERY_READ
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(100);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(100);
+#endif
   uint16_t pack = analogReadMilliVolts(BATTERY_PIN) * 2;
   Serial.printf("Battery pack voltage: %d mV\n", pack);
   batteryPercent = constrain(map(pack, 3800, 4900, 0, 100), 0, 100);
@@ -266,8 +272,9 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
 
-  // Weird deep sleep bug workaround
-  delay(450);
+  delay(400);
+  updateBatteryState();
+  delay(50);
   displayEnablePower(); // Give the chip time to initialize
   delay(50);
 
@@ -290,8 +297,6 @@ void setup() {
                   LittleFS.usedBytes() / 1024, LittleFS.totalBytes() / 1024);
   }
 
-  updateBatteryState();
-
   if (batteryPercent < 5) {
     display.fillScreen(GxEPD_WHITE);
     u8g2.setCursor(30, 46 - 2);
@@ -308,6 +313,11 @@ void setup() {
 #ifdef NO_REFRESH_TEXT
   showBootup = false;
 #endif
+
+  // Wait until 500 ms passed before reading from RTC memory
+  while (millis() < 500) {
+    delay(10);
+  }
 
   printWakeupReason();
   if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER &&
@@ -525,8 +535,6 @@ void setup() {
   }
 
   disconnectFromWiFi();
-
-  updateBatteryState();
 
   const uint32_t timeFinishDataFetch = millis();
 
