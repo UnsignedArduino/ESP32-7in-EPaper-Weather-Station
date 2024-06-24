@@ -63,6 +63,8 @@ bool updateTime(int32_t utcOffset, time_t estimate) {
   return true;
 }
 
+RTC_DATA_ATTR float batteryVoltage = 0.0;
+
 void updateBatteryState() {
 #ifdef BLINK_ON_BATTERY_READ
   digitalWrite(LED_BUILTIN, HIGH);
@@ -70,9 +72,28 @@ void updateBatteryState() {
   digitalWrite(LED_BUILTIN, LOW);
   delay(100);
 #endif
+  // https://forum.arduino.cc/t/battery-percentage-correction/485341/30
+  // IIR / Single pole filter
+  // DSP is hard
+  const float x = 0.9;
+
+  if (batteryVoltage < 1) {
+    Serial.println("First battery reading, using raw value");
+    batteryVoltage = (float)analogReadMilliVolts(BATTERY_PIN) * 2;
+  }
+
+  Serial.println("Updating battery voltage with single pole filter");
+  Serial.printf("Battery pack voltage before filter input: %f mV\n",
+                batteryVoltage);
+
   uint16_t pack = analogReadMilliVolts(BATTERY_PIN) * 2;
-  Serial.printf("Battery pack voltage: %d mV\n", pack);
-  batteryPercent = constrain(map(pack, 3800, 4900, 0, 100), 0, 100);
+  batteryVoltage = batteryVoltage * x + (float)pack * (1 - x);
+  delay(10);
+
+  Serial.printf("Battery pack voltage after filter input: %f mV\n",
+                batteryVoltage);
+
+  batteryPercent = constrain(map(batteryVoltage, 3800, 4900, 0, 100), 0, 100);
   Serial.printf("Battery percentage: %d%%\n", batteryPercent);
 }
 
@@ -272,7 +293,7 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
 
-  delay(400);
+  delay(500);
   updateBatteryState();
   delay(50);
   displayEnablePower(); // Give the chip time to initialize
@@ -313,11 +334,6 @@ void setup() {
 #ifdef NO_REFRESH_TEXT
   showBootup = false;
 #endif
-
-  // Wait until 500 ms passed before reading from RTC memory
-  while (millis() < 500) {
-    delay(10);
-  }
 
   printWakeupReason();
   if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER &&
