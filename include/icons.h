@@ -2,7 +2,7 @@
 #define ICONS_H
 
 #include "Settings.h"
-#include "localizedStrings.h"
+#include "localized_strings.h"
 #include <Arduino.h>
 
 const char* WMOCodeToFilename(uint8_t code, bool isDay);

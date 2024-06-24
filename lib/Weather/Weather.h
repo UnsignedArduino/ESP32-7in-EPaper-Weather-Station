@@ -2,7 +2,7 @@
 #define WEATHER_H
 
 #include "Settings.h"
-#include "localizedStrings.h"
+#include "localized_strings.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <TimeLib.h>

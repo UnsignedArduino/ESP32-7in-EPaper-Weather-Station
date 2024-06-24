@@ -1,4 +1,4 @@
-#include "localizedStrings.h"
+#include "localized_strings.h"
 
 // ENGLISH
 #ifdef FULL_NAMES
