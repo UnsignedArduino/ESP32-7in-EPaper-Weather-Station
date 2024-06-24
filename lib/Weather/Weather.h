@@ -37,7 +37,4 @@ void printWeather(WeatherData& data);
 
 int8_t getWeather(float latitude, float longitude, WeatherData& data);
 
-const char* WMOCodeToFilename(uint8_t code, bool isDay);
-const char* WMOCodeToLabel(uint8_t code);
-
 #endif

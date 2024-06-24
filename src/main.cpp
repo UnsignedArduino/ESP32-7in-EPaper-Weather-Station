@@ -1,5 +1,6 @@
 // For debugging
 // #define NO_REFRESH_TEXT
+// #define FORCE_LOW_BATTERY_ERROR
 // #define FORCE_WIFI_CONNECTION_ERROR
 // #define FORCE_GEOCODE_CONNECTION_FAIL
 // #define FORCE_WEATHER_CONNECTION_FAIL
@@ -11,16 +12,14 @@
 #include "Weather.h"
 #include "WiFiConnection.h"
 #include "config.h"
+#include "icons.h"
 #include "pins.h"
 #include "time.h"
 #include "unifont_custom.h"
 #include <Arduino.h>
 #include <Button.h>
 #include <LittleFS.h>
-#include <WiFi.h>
 #include <driver/rtc_io.h>
-
-// TODO: Add icons to some text
 
 Button functionBtn(FUNCTION_BTN_PIN);
 
@@ -278,6 +277,8 @@ void fontTest() {
   display.fillScreen(GxEPD_WHITE);
   u8g2.setCursor(0, 0);
   u8g2.println("Hello, world!");
+  u8g2.println();
+  u8g2.println("Font test: ");
   const char* testString = " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~0123456789\n"
                            "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
                            "abcdefghijklmnopqrstuvwxyz\n\n"
@@ -318,15 +319,23 @@ void setup() {
                   LittleFS.usedBytes() / 1024, LittleFS.totalBytes() / 1024);
   }
 
+#ifdef FORCE_LOW_BATTERY_ERROR
+  {
+#else
   if (batteryPercent < 5) {
+#endif
     display.fillScreen(GxEPD_WHITE);
-    u8g2.setCursor(30, 46 - 2);
+    displayBitmap("/bootstrap-icons-1.11.3/battery-100x100.bmp", 30, 30);
+    u8g2.setCursor(160, 46 - 2);
     u8g2.print("Battery is low!");
-    u8g2.setCursor(30, 66 - 2);
+    u8g2.setCursor(160, 66 - 2);
     u8g2.print("Please replace the batteries.");
     display.display(false);
     displayEnd();
     esp_deep_sleep_start();
+#ifdef FORCE_LOW_BATTERY_ERROR
+    return;
+#endif
   }
 
   bool showBootup = true;
@@ -343,7 +352,8 @@ void setup() {
 
   if (showBootup) {
     display.fillScreen(GxEPD_WHITE);
-    u8g2.setCursor(30, 46 - 2);
+    displayBitmap("/bootstrap-icons-1.11.3/arrow-repeat-100x100.bmp", 30, 30);
+    u8g2.setCursor(160, 46 - 2);
     u8g2.print("Refreshing...");
     u8g2.setCursor(30, 450 - 2);
     u8g2.print("Weather data by Open-Meteo.com");
@@ -355,10 +365,11 @@ void setup() {
   if (functionBtn.read() == Button::PRESSED) {
     Serial.println("Detected button press, hold for 3 seconds to reset");
     display.fillScreen(GxEPD_WHITE);
-    u8g2.setCursor(30, 46 - 2);
+    displayBitmap("/bootstrap-icons-1.11.3/trash-100x100.bmp", 30, 30);
+    u8g2.setCursor(160, 46 - 2);
     u8g2.print(
       "Hold the function button for 3 seconds to reset WiFi settings. ");
-    u8g2.setCursor(30, 66 - 2);
+    u8g2.setCursor(160, 66 - 2);
     u8g2.print("Otherwise, release the button to continue as normal.");
     display.display(false);
     const uint32_t holdUntil = millis() + 3000;
@@ -371,17 +382,19 @@ void setup() {
       Serial.println("Button held long enough, resetting WiFi settings");
       resetWiFiSettings();
       display.fillScreen(GxEPD_WHITE);
-      u8g2.setCursor(30, 46 - 2);
+      displayBitmap("/bootstrap-icons-1.11.3/check-100x100.bmp", 30, 30);
+      u8g2.setCursor(160, 46 - 2);
       u8g2.print("WiFi settings reset. ");
-      u8g2.setCursor(30, 66 - 2);
+      u8g2.setCursor(160, 66 - 2);
       u8g2.print("Starting configuration AP...");
       display.display(false);
     } else {
       Serial.println("Button released prematurely, continuing");
       display.fillScreen(GxEPD_WHITE);
-      u8g2.setCursor(30, 46 - 2);
+      displayBitmap("/bootstrap-icons-1.11.3/arrow-repeat-100x100.bmp", 30, 30);
+      u8g2.setCursor(160, 46 - 2);
       u8g2.print("WiFi settings not reset. ");
-      u8g2.setCursor(30, 66 - 2);
+      u8g2.setCursor(160, 66 - 2);
       u8g2.print("Refreshing...");
       u8g2.setCursor(30, 450 - 2);
       u8g2.print("Weather data by Open-Meteo.com");
@@ -396,35 +409,37 @@ void setup() {
   const int8_t connectRes =
     connectToWiFi([](char* ssid, char* password, char* ip) {
       display.fillScreen(GxEPD_WHITE);
-      u8g2.setCursor(30, 46 - 2);
+      displayBitmap("/bootstrap-icons-1.11.3/wifi-100x100.bmp", 30, 30);
+
+      u8g2.setCursor(160, 46 - 2);
       u8g2.print("Configuration AP launched.");
-      u8g2.setCursor(30, 66 - 2);
+      u8g2.setCursor(160, 66 - 2);
       u8g2.print(
         "Join the WiFi network in order to configure the weather station.");
-      u8g2.setCursor(30, 106 - 2);
+      u8g2.setCursor(160, 106 - 2);
 
       u8g2.print("SSID: ");
       u8g2.print(ssid);
-      u8g2.setCursor(30, 126 - 2);
+      u8g2.setCursor(160, 126 - 2);
       u8g2.print("Password: ");
       u8g2.print(password);
-      u8g2.setCursor(30, 146 - 2);
+      u8g2.setCursor(160, 146 - 2);
       u8g2.print("IP: ");
       u8g2.print(ip);
       u8g2.print(
         " (may pop up automatically or you may be asked to \"sign in\")");
 
-      u8g2.setCursor(30, 186 - 2);
+      u8g2.setCursor(160, 186 - 2);
       u8g2.print("Once on the page with titled \"WiFiManager\", hit the "
                  "\"Configure WiFi\" button.");
-      u8g2.setCursor(30, 206 - 2);
+      u8g2.setCursor(160, 206 - 2);
       u8g2.print("Select a WiFi network and type in the password. Change the "
-                 "other options to configure to ");
-      u8g2.setCursor(30, 226 - 2);
-      u8g2.print("your liking. Then hit the \"Save\" button. You will be "
-                 "disconnected from the ");
-      u8g2.setCursor(30, 246 - 2);
-      u8g2.print("configuration WiFi network.");
+                 "other options to ");
+      u8g2.setCursor(160, 226 - 2);
+      u8g2.print(
+        "configure to your liking. Then hit the \"Save\" button. You will be ");
+      u8g2.setCursor(160, 246 - 2);
+      u8g2.print("disconnected from the configuration WiFi network.");
 
       display.display(false);
     });
@@ -436,9 +451,10 @@ void setup() {
       break;
     case WIFI_CONNECTION_SUCCESS_CONFIG: {
       display.fillScreen(GxEPD_WHITE);
-      u8g2.setCursor(30, 46 - 2);
+      displayBitmap("/bootstrap-icons-1.11.3/check-100x100.bmp", 30, 30);
+      u8g2.setCursor(160, 46 - 2);
       u8g2.print("Successfully configured!");
-      u8g2.setCursor(30, 66 - 2);
+      u8g2.setCursor(160, 66 - 2);
       u8g2.print("Refreshing...");
       u8g2.setCursor(30, 450 - 2);
       u8g2.print("Weather data by Open-Meteo.com");
@@ -447,28 +463,30 @@ void setup() {
     }
     case WIFI_CONNECTION_ERROR: {
       display.fillScreen(GxEPD_WHITE);
-      u8g2.setCursor(30, 46 - 2);
+      displayBitmap("/bootstrap-icons-1.11.3/wifi-off-100x100.bmp", 30, 30);
+      u8g2.setCursor(160, 46 - 2);
       u8g2.print("Failed to connect to WiFi!");
-      u8g2.setCursor(30, 66 - 2);
+      u8g2.setCursor(160, 66 - 2);
       u8g2.printf("Retrying in %d minutes - Hold the function button for 3 "
-                  "seconds to restart the WiFi ",
+                  "seconds to restart ",
                   RETRY_TIME);
-      u8g2.setCursor(30, 86 - 2);
-      u8g2.print("configuration process now.");
+      u8g2.setCursor(160, 86 - 2);
+      u8g2.print("the WiFi configuration process now.");
       display.display(false);
       showWeather = false;
       break;
     }
     case WIFI_CONNECTION_ERROR_TIMEOUT: {
       display.fillScreen(GxEPD_WHITE);
-      u8g2.setCursor(30, 46 - 2);
+      displayBitmap("/bootstrap-icons-1.11.3/wifi-off-100x100.bmp", 30, 30);
+      u8g2.setCursor(160, 46 - 2);
       u8g2.print("WiFi timed out!");
-      u8g2.setCursor(30, 66 - 2);
+      u8g2.setCursor(160, 66 - 2);
       u8g2.printf("Retrying in %d minutes - Hold the function button for 3 "
-                  "seconds to restart the WiFi ",
+                  "seconds to restart ",
                   RETRY_TIME);
-      u8g2.setCursor(30, 86 - 2);
-      u8g2.print("configuration process now.");
+      u8g2.setCursor(160, 86 - 2);
+      u8g2.print("the WiFi configuration process now.");
       display.display(false);
       showWeather = false;
       break;
@@ -490,7 +508,8 @@ void setup() {
           geocodeResult == GET_COORDINATE_SUCCESS_CACHE)) {
       showWeather = false;
       display.fillScreen(GxEPD_WHITE);
-      u8g2.setCursor(30, 46 - 2);
+      displayBitmap("/bootstrap-icons-1.11.3/exclamation-100x100.bmp", 30, 30);
+      u8g2.setCursor(160, 46 - 2);
       switch (geocodeResult) { // NOLINT(*-multiway-paths-covered)
         case GET_COORDINATE_CONNECTION_FAIL: {
           u8g2.print("Failed to connect to the geocoding API!");
@@ -505,7 +524,7 @@ void setup() {
           break;
         }
       }
-      u8g2.setCursor(30, 66 - 2);
+      u8g2.setCursor(160, 66 - 2);
       u8g2.printf(
         "Retrying in %d minutes - Press the function button to try again now.",
         RETRY_TIME);
@@ -525,7 +544,8 @@ void setup() {
     if (weatherResult != GET_WEATHER_SUCCESS) {
       showWeather = false;
       display.fillScreen(GxEPD_WHITE);
-      u8g2.setCursor(30, 46 - 2);
+      displayBitmap("/bootstrap-icons-1.11.3/exclamation-100x100.bmp", 30, 30);
+      u8g2.setCursor(160, 46 - 2);
       switch (weatherResult) { // NOLINT(*-multiway-paths-covered)
         case GET_WEATHER_CONNECTION_FAIL: {
           u8g2.print("Failed to connect to the weather API!");
@@ -540,7 +560,7 @@ void setup() {
           break;
         }
       }
-      u8g2.setCursor(30, 66 - 2);
+      u8g2.setCursor(160, 66 - 2);
       u8g2.printf(
         "Retrying in %d minutes - Press the function button to try again now.",
         RETRY_TIME);
