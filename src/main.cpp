@@ -112,14 +112,17 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
   const char** monthNames;
   const char** dayNames;
   if (strcmp(languageSetting, LANGUAGE_EN) == 0) {
+    Serial.println("Using english for weather display");
     weekdayNames = WEEKDAY_NAMES_EN;
     monthNames = MONTH_NAMES_EN;
     dayNames = DAY_NAMES_EN;
   } else if (strcmp(languageSetting, LANGUAGE_CN_TRAD) == 0) {
+    Serial.println("Using traditional Chinese for weather display");
     weekdayNames = WEEKDAY_NAMES_CN_TRAD;
     monthNames = MONTH_NAMES_CN_TRAD;
     dayNames = DAY_NAMES_CN_TRAD;
   } else {
+    Serial.println("Using simplified Chinese for weather display");
     weekdayNames = WEEKDAY_NAMES_CN_SIMP;
     monthNames = MONTH_NAMES_CN_SIMP;
     dayNames = DAY_NAMES_CN_SIMP;

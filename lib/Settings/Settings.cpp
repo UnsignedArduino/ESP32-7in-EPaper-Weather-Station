@@ -15,19 +15,19 @@ const char* WIND_SPEED_UNIT_MS = "ms";
 const char* WIND_SPEED_UNIT_MPH = "mph";
 const char* WIND_SPEED_UNIT_KN = "kn";
 const char* WIND_SPEED_UNITS[MAX_WIND_SPEED_UNITS] = {
-    WIND_SPEED_UNIT_KMH, WIND_SPEED_UNIT_MS, WIND_SPEED_UNIT_MPH,
-    WIND_SPEED_UNIT_KN};
+  WIND_SPEED_UNIT_KMH, WIND_SPEED_UNIT_MS, WIND_SPEED_UNIT_MPH,
+  WIND_SPEED_UNIT_KN};
 const char* WIND_SPEED_UNITS_LABELS[MAX_WIND_SPEED_UNITS] = {
-    "Kilometers per hour (Kmh)", "Meters per second (ms)",
-    "Miles per hour (mph)", "Knots (kn)"};
+  "Kilometers per hour (Kmh)", "Meters per second (ms)", "Miles per hour (mph)",
+  "Knots (kn)"};
 char windSpeedUnitSetting[MAX_WIND_SPEED_UNIT_LENGTH] = "Kmh";
 
 const char* PRECIPITATION_UNIT_MM = "mm";
 const char* PRECIPITATION_UNIT_IN = "in";
 const char* PRECIPITATION_UNITS[MAX_PRECIPITATION_UNITS] = {
-    PRECIPITATION_UNIT_MM, PRECIPITATION_UNIT_IN};
+  PRECIPITATION_UNIT_MM, PRECIPITATION_UNIT_IN};
 const char* PRECIPITATION_UNITS_LABELS[MAX_PRECIPITATION_UNITS] = {
-    "Millimeter (mm)", "Inch (in)"};
+  "Millimeter (mm)", "Inch (in)"};
 char precipitationUnitSetting[MAX_PRECIPITATION_UNIT_LENGTH] = "mm";
 
 const char* LANGUAGE_EN = "en";
@@ -46,9 +46,9 @@ bool saveSettings() {
   preferences.begin("weatherStation");
   preferences.putString("cityOrZipCode", cityOrPostalCodeSetting);
   preferences.putString("tempUnit", tempUnitSetting);
-  preferences.putString("windSpeedUnit", windSpeedUnitSetting);
-  preferences.putString("precipUnit", precipitationUnitSetting);
-  preferences.putString("language", languageSetting);
+  //  preferences.putString("windSpeedUnit", windSpeedUnitSetting);
+  //  preferences.putString("precipUnit", precipitationUnitSetting);
+  preferences.putString("lang", languageSetting);
   preferences.end();
   Serial.println("Settings saved");
   return true;
@@ -61,11 +61,11 @@ bool loadSettings() {
   preferences.getString("cityOrZipCode", cityOrPostalCodeSetting,
                         MAX_CITY_OR_POSTAL_CODE_LENGTH);
   preferences.getString("tempUnit", tempUnitSetting, MAX_TEMP_UNIT_LENGTH);
-  preferences.getString("windSpeedUnit", windSpeedUnitSetting,
-                        MAX_WIND_SPEED_UNIT_LENGTH);
-  preferences.getString("precipUnit", precipitationUnitSetting,
-                        MAX_PRECIPITATION_UNIT_LENGTH);
-  preferences.getString("language", languageSetting, MAX_LANGUAGE_LENGTH);
+  //  preferences.getString("windSpeedUnit", windSpeedUnitSetting,
+  //                        MAX_WIND_SPEED_UNIT_LENGTH);
+  //  preferences.getString("precipUnit", precipitationUnitSetting,
+  //                        MAX_PRECIPITATION_UNIT_LENGTH);
+  preferences.getString("lang", languageSetting, MAX_LANGUAGE_LENGTH);
   preferences.end();
   Serial.println("Settings loaded");
   return true;
@@ -75,7 +75,7 @@ void printSettings() {
   Serial.println("Weather station settings:");
   Serial.printf("  City or postal code: %s\n", cityOrPostalCodeSetting);
   Serial.printf("  Temperature unit: %s\n", tempUnitSetting);
-  Serial.printf("  Wind speed unit: %s\n", windSpeedUnitSetting);
-  Serial.printf("  Precipitation unit: %s\n", precipitationUnitSetting);
+  //  Serial.printf("  Wind speed unit: %s\n", windSpeedUnitSetting);
+  //  Serial.printf("  Precipitation unit: %s\n", precipitationUnitSetting);
   Serial.printf("  Language: %s\n", languageSetting);
 }

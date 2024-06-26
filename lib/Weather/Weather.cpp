@@ -36,7 +36,15 @@ int8_t getWeather(float latitude, float longitude, WeatherData& data) {
 
   Serial.println("Connecting to weather API");
   WiFiClient client;
-  if (!client.connect("api.open-meteo.com", 80)) {
+
+  for (uint8_t i = 0; i < 3; i++) {
+    Serial.printf("Attempt %d of 3 to connect to weather API\n", i + 1);
+    if (client.connect("api.open-meteo.com", 80)) {
+      break;
+    }
+    delay(1000);
+  }
+  if (!client.connected()) {
     Serial.println("Failed to connect to weather API");
     return GET_WEATHER_CONNECTION_FAIL;
   }

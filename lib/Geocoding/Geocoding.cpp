@@ -41,14 +41,23 @@ int8_t getGeocode(char cityOrPostalCode[MAX_CITY_OR_POSTAL_CODE_LENGTH],
 
   Serial.println("Connecting to geocoding API");
   WiFiClient client;
-  if (!client.connect("geocoding-api.open-meteo.com", 80)) {
+
+  for (uint8_t i = 0; i < 3; i++) {
+    Serial.printf("Attempt %d of 3 to connect to geocoding API\n", i + 1);
+    if (client.connect("geocoding-api.open-meteo.com", 80)) {
+      break;
+    }
+    delay(1000);
+  }
+  if (!client.connected()) {
     Serial.println("Failed to connect to geocoding API");
     return GET_COORDINATE_CONNECTION_FAIL;
   }
 
   Serial.println("Connected, sending request");
-  client.printf("GET /v1/search?name=01801&count=1&language=en&format=json "
-                "HTTP/1.1\r\n");
+  client.printf("GET /v1/search?name=%s&count=1&language=en&format=json "
+                "HTTP/1.1\r\n",
+                cityOrPostalCode);
   client.printf("Host: geocoding-api.open-meteo.com\r\n\r\n");
 
   Serial.println("Waiting for response");

@@ -60,33 +60,34 @@ int8_t connectToWiFi(void (*onConfigAPLaunch)(char*, char*, char*)) {
                         TEMP_UNITS_LABELS, MAX_TEMP_UNITS, tempUnitSetting);
   WiFiManagerParameter customTempUnitInject(customTempUnitHTML);
   wm.addParameter(&customTempUnitInject);
-  WiFiManagerParameter customTempUnit(
-    "tempUnitID", "Temperature unit: (Should be hidden)", "", 2);
+  WiFiManagerParameter customTempUnit("tempUnitID",
+                                      "Temperature unit: (Should be hidden)",
+                                      "", MAX_TEMP_UNIT_LENGTH);
   wm.addParameter(&customTempUnit);
 
-  char* customWindSpeedUnitHTML = (char*)malloc(MAX_HTML_SIZE);
-  generateHTMLForSelect(
-    customWindSpeedUnitHTML, MAX_HTML_SIZE, "Wind speed unit",
-    "windSpeedUnitInjectID", "windSpeedUnitID", WIND_SPEED_UNITS,
-    WIND_SPEED_UNITS_LABELS, MAX_WIND_SPEED_UNITS, windSpeedUnitSetting);
-  WiFiManagerParameter customWindSpeedUnitInject(customWindSpeedUnitHTML);
-  wm.addParameter(&customWindSpeedUnitInject);
-  WiFiManagerParameter customWindSpeedUnit(
-    "windSpeedUnitID", "Wind speed unit: (Should be hidden)", "", 4);
-  wm.addParameter(&customWindSpeedUnit);
-
-  char* customPrecipitationUnitHTML = (char*)malloc(MAX_HTML_SIZE);
-  generateHTMLForSelect(customPrecipitationUnitHTML, MAX_HTML_SIZE,
-                        "Precipitation unit", "precipitationUnitInjectID",
-                        "precipitationUnitID", PRECIPITATION_UNITS,
-                        PRECIPITATION_UNITS_LABELS, MAX_PRECIPITATION_UNITS,
-                        precipitationUnitSetting);
-  WiFiManagerParameter customPrecipitationUnitInject(
-    customPrecipitationUnitHTML);
-  wm.addParameter(&customPrecipitationUnitInject);
-  WiFiManagerParameter customPrecipitationUnit(
-    "precipitationUnitID", "Precipitation unit: (Should be hidden)", "", 3);
-  wm.addParameter(&customPrecipitationUnit);
+  //  char* customWindSpeedUnitHTML = (char*)malloc(MAX_HTML_SIZE);
+  //  generateHTMLForSelect(
+  //    customWindSpeedUnitHTML, MAX_HTML_SIZE, "Wind speed unit",
+  //    "windSpeedUnitInjectID", "windSpeedUnitID", WIND_SPEED_UNITS,
+  //    WIND_SPEED_UNITS_LABELS, MAX_WIND_SPEED_UNITS, windSpeedUnitSetting);
+  //  WiFiManagerParameter customWindSpeedUnitInject(customWindSpeedUnitHTML);
+  //  wm.addParameter(&customWindSpeedUnitInject);
+  //  WiFiManagerParameter customWindSpeedUnit(
+  //    "windSpeedUnitID", "Wind speed unit: (Should be hidden)", "", 4);
+  //  wm.addParameter(&customWindSpeedUnit);
+  //
+  //  char* customPrecipitationUnitHTML = (char*)malloc(MAX_HTML_SIZE);
+  //  generateHTMLForSelect(customPrecipitationUnitHTML, MAX_HTML_SIZE,
+  //                        "Precipitation unit", "precipitationUnitInjectID",
+  //                        "precipitationUnitID", PRECIPITATION_UNITS,
+  //                        PRECIPITATION_UNITS_LABELS, MAX_PRECIPITATION_UNITS,
+  //                        precipitationUnitSetting);
+  //  WiFiManagerParameter customPrecipitationUnitInject(
+  //    customPrecipitationUnitHTML);
+  //  wm.addParameter(&customPrecipitationUnitInject);
+  //  WiFiManagerParameter customPrecipitationUnit(
+  //    "precipitationUnitID", "Precipitation unit: (Should be hidden)", "", 3);
+  //  wm.addParameter(&customPrecipitationUnit);
 
   char* customLanguageHTML = (char*)malloc(MAX_HTML_SIZE);
   generateHTMLForSelect(customLanguageHTML, MAX_HTML_SIZE, "Language",
@@ -94,8 +95,8 @@ int8_t connectToWiFi(void (*onConfigAPLaunch)(char*, char*, char*)) {
                         LANGUAGES_LABELS, MAX_LANGUAGES, languageSetting);
   WiFiManagerParameter customLanguageInject(customLanguageHTML);
   wm.addParameter(&customLanguageInject);
-  WiFiManagerParameter customLanguage("languageID",
-                                      "Language: (Should be hidden)", "", 3);
+  WiFiManagerParameter customLanguage(
+    "languageID", "Language: (Should be hidden)", "", MAX_LANGUAGE_LENGTH);
   wm.addParameter(&customLanguage);
 
   char ssid[32];
@@ -125,8 +126,8 @@ int8_t connectToWiFi(void (*onConfigAPLaunch)(char*, char*, char*)) {
   const bool res = wm.autoConnect(ssid, password);
 
   free(customTempUnitHTML);
-  free(customWindSpeedUnitHTML);
-  free(customPrecipitationUnitHTML);
+  //  free(customWindSpeedUnitHTML);
+  //  free(customPrecipitationUnitHTML);
   free(customLanguageHTML);
 
   if (res) {
@@ -137,10 +138,11 @@ int8_t connectToWiFi(void (*onConfigAPLaunch)(char*, char*, char*)) {
       strncpy(cityOrPostalCodeSetting, customCityOrPostalCode.getValue(),
               MAX_CITY_OR_POSTAL_CODE_LENGTH);
       strncpy(tempUnitSetting, customTempUnit.getValue(), MAX_TEMP_UNIT_LENGTH);
-      strncpy(windSpeedUnitSetting, customWindSpeedUnit.getValue(),
-              MAX_WIND_SPEED_UNIT_LENGTH);
-      strncpy(precipitationUnitSetting, customPrecipitationUnit.getValue(),
-              MAX_PRECIPITATION_UNIT_LENGTH);
+      //      strncpy(windSpeedUnitSetting, customWindSpeedUnit.getValue(),
+      //              MAX_WIND_SPEED_UNIT_LENGTH);
+      //      strncpy(precipitationUnitSetting,
+      //      customPrecipitationUnit.getValue(),
+      //              MAX_PRECIPITATION_UNIT_LENGTH);
       strncpy(languageSetting, customLanguage.getValue(), MAX_LANGUAGE_LENGTH);
       saveSettings();
       printSettings();
