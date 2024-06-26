@@ -78,6 +78,7 @@ void updateBatteryState() {
 
   if (batteryVoltage < 1) {
     Serial.println("First battery reading, using raw value");
+    delay(500);
     batteryVoltage = (float)analogReadMilliVolts(BATTERY_PIN) * 2;
   }
 
@@ -85,6 +86,7 @@ void updateBatteryState() {
   Serial.printf("Battery pack voltage before filter input: %f mV\n",
                 batteryVoltage);
 
+  delay(500);
   uint16_t pack = analogReadMilliVolts(BATTERY_PIN) * 2;
   batteryVoltage = batteryVoltage * x + (float)pack * (1 - x);
   delay(10);
@@ -92,7 +94,7 @@ void updateBatteryState() {
   Serial.printf("Battery pack voltage after filter input: %f mV\n",
                 batteryVoltage);
 
-  batteryPercent = constrain(map(batteryVoltage, 3800, 4900, 0, 100), 0, 100);
+  batteryPercent = constrain(map(batteryVoltage, 3900, 4900, 0, 100), 0, 100);
   Serial.printf("Battery percentage: %d%%\n", batteryPercent);
 }
 
