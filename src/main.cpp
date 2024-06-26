@@ -63,7 +63,7 @@ bool updateTime(int32_t utcOffset, time_t estimate) {
 
 uint8_t batteryPercent = 0;
 RTC_DATA_ATTR bool measuringBattThisTime = true;
-RTC_SLOW_ATTR ulp_var_t ulpBatteryMilliVolt; // uint16_t
+RTC_DATA_ATTR ulp_var_t ulpBatteryMilliVolt; // uint16_t
 
 void updateBatteryState() {
 #ifdef BLINK_ON_BATTERY_READ
@@ -78,24 +78,21 @@ void updateBatteryState() {
   if (measuringBattThisTime) {
     measuringBattThisTime = false;
     Serial.println("Loading ULP program to read battery voltage");
-    hulp_configure_analog_pin(BATTERY_PIN, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12);
     const ulp_insn_t program[] = {
-      M_DELAY_MS_20_1000(500),
+      M_DELAY_MS_20_60000(3000),
       I_STAGE_RST(),
       I_MOVI(R0, 0),
       I_MOVI(R3, 0),
-      I_ADC_POWER_ON(),
       I_ANALOG_READ(R0, BATTERY_PIN),
       I_PUT(R0, R3, ulpBatteryMilliVolt),
-      I_ADC_POWER_OFF(),
+      M_WAKE_WHEN_READY(),
       I_HALT(),
     };
-    hulp_peripherals_on();
-    hulp_ulp_load(program, sizeof(program), 0, 0);
-    hulp_ulp_run_once(0);
-    Serial.println(
-      "Going to deep sleep for 1 second to let ULP program run once");
-    esp_sleep_enable_timer_wakeup(1000000ULL); // 1 second
+    hulp_configure_analog_pin(BATTERY_PIN, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12);
+    hulp_ulp_load(program, sizeof(program), 4000 * 1000ULL, 0);
+    hulp_ulp_run(0);
+    Serial.println("Going to deep sleep to let ULP program run");
+    esp_sleep_enable_ulp_wakeup();
     esp_deep_sleep_start();
   }
 
