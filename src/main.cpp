@@ -20,12 +20,11 @@
 #include <Button.h>
 #include <LittleFS.h>
 #include <driver/rtc_io.h>
+#include <hulp_arduino.h>
 
 Button functionBtn(FUNCTION_BTN_PIN);
 
 RTC_DATA_ATTR bool lastUpdateSuccess = false;
-
-uint8_t batteryPercent = 0;
 
 bool accurateTime = false;
 
@@ -62,7 +61,9 @@ bool updateTime(int32_t utcOffset, time_t estimate) {
   return true;
 }
 
-RTC_DATA_ATTR float batteryVoltage = 0.0;
+uint8_t batteryPercent = 0;
+RTC_DATA_ATTR bool measuringBattThisTime = true;
+RTC_SLOW_ATTR ulp_var_t ulpBatteryMilliVolt; // uint16_t
 
 void updateBatteryState() {
 #ifdef BLINK_ON_BATTERY_READ
@@ -71,29 +72,46 @@ void updateBatteryState() {
   digitalWrite(LED_BUILTIN, LOW);
   delay(100);
 #endif
-  // https://forum.arduino.cc/t/battery-percentage-correction/485341/30
-  // IIR / Single pole filter
-  // DSP is hard
-  const float x = 0.9;
-
-  if (batteryVoltage < 1) {
-    Serial.println("First battery reading, using raw value");
-    batteryVoltage = (float)analogReadMilliVolts(BATTERY_PIN) * 2;
+  // If the battery voltage is 0, then we must go to deep sleep to read the
+  // battery voltage this boot. Then the ULP can get an accurate reading. After
+  // the ULP wakes the main processor up, we use that.
+  if (measuringBattThisTime) {
+    measuringBattThisTime = false;
+    Serial.println("Loading ULP program to read battery voltage");
+    hulp_configure_analog_pin(BATTERY_PIN, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12);
+    const ulp_insn_t program[] = {
+      M_DELAY_MS_20_1000(500),
+      I_STAGE_RST(),
+      I_MOVI(R0, 0),
+      I_MOVI(R3, 0),
+      I_ADC_POWER_ON(),
+      I_ANALOG_READ(R0, BATTERY_PIN),
+      I_PUT(R0, R3, ulpBatteryMilliVolt),
+      I_ADC_POWER_OFF(),
+      I_HALT(),
+    };
+    hulp_peripherals_on();
+    hulp_ulp_load(program, sizeof(program), 0, 0);
+    hulp_ulp_run_once(0);
+    Serial.println(
+      "Going to deep sleep for 1 second to let ULP program run once");
+    esp_sleep_enable_timer_wakeup(1000000ULL); // 1 second
+    esp_deep_sleep_start();
   }
 
-  Serial.println("Updating battery voltage with single pole filter");
-  Serial.printf("Battery pack voltage before filter input: %f mV\n",
-                batteryVoltage);
+  Serial.println("Reading battery voltage set by ULP");
+  ulpBatteryMilliVolt.val =
+    map(ulpBatteryMilliVolt.val, 0, 4096, 0, 3300) * 2; // Voltage divider
+  Serial.printf("Battery voltage: %d mV\n", ulpBatteryMilliVolt.val);
 
-  uint16_t pack = analogReadMilliVolts(BATTERY_PIN) * 2;
-  batteryVoltage = batteryVoltage * x + (float)pack * (1 - x);
-  delay(10);
-
-  Serial.printf("Battery pack voltage after filter input: %f mV\n",
-                batteryVoltage);
-
-  batteryPercent = constrain(map(batteryVoltage, 3800, 4900, 0, 100), 0, 100);
+  // Although 3 AA batteries are good till 3v, we need to stop at 3.8v because
+  // of the LDO regulator max drop out of 0.5v. Most batteries start higher
+  // than 1.5v, so we can use 5v as the max.
+  batteryPercent =
+    constrain(map(ulpBatteryMilliVolt.val, 3900, 5000, 0, 100), 0, 100);
   Serial.printf("Battery percentage: %d%%\n", batteryPercent);
+
+  measuringBattThisTime = true;
 }
 
 char* formatTemp(char* buf, size_t bufSize, float temp) {
@@ -295,12 +313,14 @@ void setup() {
   digitalWrite(LED_BUILTIN, LOW);
 
   delay(500);
+
+  Serial.println("ESP32 Weather Station");
+  Serial.printf("Efuse MAC: 0x%012llX\n", ESP.getEfuseMac());
+
   updateBatteryState();
   delay(50);
-  displayEnablePower(); // Give the chip time to initialize
+  displayEnablePower(); // Give the E-paper chip time to initialize
   delay(50);
-
-  Serial.printf("Efuse MAC: 0x%012llX\n", ESP.getEfuseMac());
 
   functionBtn.begin();
 
@@ -324,6 +344,7 @@ void setup() {
 #else
   if (batteryPercent < 5) {
 #endif
+    Serial.println("Battery is too low! Going to permanent deep sleep.");
     display.fillScreen(GxEPD_WHITE);
     displayBitmap("/bootstrap-icons-1.11.3/battery-100x100.bmp", 30, 30);
     u8g2.setCursor(160, 46 - 2);
