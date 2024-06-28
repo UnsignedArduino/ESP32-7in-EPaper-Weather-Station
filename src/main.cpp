@@ -5,6 +5,7 @@
 // #define FORCE_GEOCODE_CONNECTION_FAIL
 // #define FORCE_WEATHER_CONNECTION_FAIL
 // #define BLINK_ON_BATTERY_READ
+// #define FORCE_FAKE_WIFI_CONFIGURATION_SCREEN
 
 #include "Display.h"
 #include "Geocoding.h"
@@ -20,6 +21,7 @@
 #include <Button.h>
 #include <LittleFS.h>
 #include <driver/rtc_io.h>
+#include <qrcode.h>
 
 Button functionBtn(FUNCTION_BTN_PIN);
 
@@ -411,43 +413,92 @@ void setup() {
 #ifdef FORCE_WIFI_CONNECTION_ERROR
   const int8_t connectRes = WIFI_CONNECTION_ERROR;
 #else
-  const int8_t connectRes =
-    connectToWiFi([](char* ssid, char* password, char* ip) {
-      display.fillScreen(GxEPD_WHITE);
-      displayBitmap("/bootstrap-icons-1.11.3/wifi-100x100.bmp", 30, 30);
+  #ifdef FORCE_FAKE_WIFI_CONFIGURATION_SCREEN
+  Serial.println("Forcing fake WiFi configuration screen for testing");
 
-      u8g2.setCursor(160, 46 - 2);
-      u8g2.print("Configuration AP launched.");
-      u8g2.setCursor(160, 66 - 2);
-      u8g2.print(
-        "Join the WiFi network in order to configure the weather station.");
-      u8g2.setCursor(160, 106 - 2);
+  char ssid[32];
+  char password[64];
+  snprintf(ssid, sizeof(ssid), "Weather Station %04X",
+           (uint16_t)(ESP.getEfuseMac() & 0xFFFF));
+  snprintf(password, sizeof(password), "%012llX", ESP.getEfuseMac());
 
-      u8g2.print("SSID: ");
-      u8g2.print(ssid);
-      u8g2.setCursor(160, 126 - 2);
-      u8g2.print("Password: ");
-      u8g2.print(password);
-      u8g2.setCursor(160, 146 - 2);
-      u8g2.print("IP: ");
-      u8g2.print(ip);
-      u8g2.print(
-        " (may pop up automatically or you may be asked to \"sign in\")");
+  const char* ip = "192.168.1.4";
+  #else
+  const int8_t connectRes = connectToWiFi([](char* ssid, char* password,
+                                             char* ip) {
+  #endif
+  display.fillScreen(GxEPD_WHITE);
+  displayBitmap("/bootstrap-icons-1.11.3/wifi-100x100.bmp", 30, 30);
 
-      u8g2.setCursor(160, 186 - 2);
-      u8g2.print("Once on the page with titled \"WiFiManager\", hit the "
-                 "\"Configure WiFi\" button.");
-      u8g2.setCursor(160, 206 - 2);
-      u8g2.print("Select a WiFi network and type in the password. Change the "
-                 "other options to ");
-      u8g2.setCursor(160, 226 - 2);
-      u8g2.print(
-        "configure to your liking. Then hit the \"Save\" button. You will be ");
-      u8g2.setCursor(160, 246 - 2);
-      u8g2.print("disconnected from the configuration WiFi network.");
+  u8g2.setCursor(160, 46 - 2);
+  u8g2.print("Configuration AP launched.");
+  u8g2.setCursor(160, 66 - 2);
+  u8g2.print(
+    "Join the WiFi network in order to configure the weather station.");
+  u8g2.setCursor(160, 106 - 2);
 
-      display.display(false);
-    });
+  u8g2.print("SSID: ");
+  u8g2.print(ssid);
+  u8g2.setCursor(160, 126 - 2);
+  u8g2.print("Password: ");
+  u8g2.print(password);
+  u8g2.setCursor(160, 146 - 2);
+  u8g2.print("IP: ");
+  u8g2.print(ip);
+  u8g2.print(" (may pop up automatically or you may be asked to \"sign in\")");
+
+  u8g2.setCursor(160, 186 - 2);
+  u8g2.print("Or scan the QR code below to connect to the configuration AP: ");
+
+  QRCode qrcode;
+  // QR code format is
+  // WIFI:S:<SSID>;T:<WEP|WPA|nopass>;P:<PASSWORD>;H:<true|false|blank>;;
+  // https://en.wikipedia.org/wiki/QR_code#Joining_a_Wi%E2%80%91Fi_network
+  char qrCodeString[128];
+  const uint8_t version = 4;
+  uint8_t qrCodeData[qrcode_getBufferSize(version)];
+  snprintf(qrCodeString, sizeof(qrCodeString), "WIFI:S:%s;T:WPA;P:%s;H:false;;",
+           ssid, password);
+  Serial.printf("QR code data: %s (%d chars)\n", qrCodeString,
+                strlen(qrCodeString));
+  qrcode_initText(&qrcode, qrCodeData, version, ECC_LOW, qrCodeString);
+  Serial.printf("Generated QR code for WiFi network with size %dx%d\n",
+                qrcode.size, qrcode.size);
+  const uint8_t BLOCK_SIZE = 4;
+  for (uint8_t y = 0; y < qrcode.size; y++) {
+    for (uint8_t x = 0; x < qrcode.size; x++) {
+      if (qrcode_getModule(&qrcode, x, y)) {
+        display.fillRect(160 + x * BLOCK_SIZE, 204 + y * BLOCK_SIZE, BLOCK_SIZE,
+                         BLOCK_SIZE, GxEPD_BLACK);
+      }
+    }
+  }
+  uint16_t nextY = 206 - 2 + qrcode.size * BLOCK_SIZE + 20 * 2 + 2;
+
+  u8g2.setCursor(160, nextY - 2);
+  u8g2.print("Once on the page with titled \"WiFiManager\", hit the "
+             "\"Configure WiFi\" button.");
+  u8g2.setCursor(160, nextY + 20 - 2);
+  u8g2.print("Select a WiFi network and type in the password. Change the "
+             "other options to ");
+  u8g2.setCursor(160, nextY + 20 * 2 - 2);
+  u8g2.print(
+    "configure to your liking. Then hit the \"Save\" button. You will be ");
+  u8g2.setCursor(160, nextY + 20 * 3 - 2);
+  u8g2.print("disconnected from the configuration WiFi network.");
+
+  display.display(false);
+  #ifdef FORCE_FAKE_WIFI_CONFIGURATION_SCREEN
+
+  displayEnd();
+  displayDisablePower();
+
+  const int8_t connectRes = WIFI_CONNECTION_SUCCESS_CONFIG;
+
+  return;
+  #else
+  });
+  #endif
 #endif
   bool showWeather = true;
   switch (connectRes) {
