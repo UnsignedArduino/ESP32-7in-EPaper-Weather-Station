@@ -99,6 +99,33 @@ int8_t connectToWiFi(void (*onConfigAPLaunch)(char*, char*, char*)) {
     "languageID", "Language: (Should be hidden)", "", MAX_LANGUAGE_LENGTH);
   wm.addParameter(&customLanguage);
 
+  const size_t MAX_SLEEP_TIME_START_STRING_LENGTH = 3;
+  char sleepTimeStartString[MAX_SLEEP_TIME_START_STRING_LENGTH];
+  if (sleepTimeEnabledSetting) {
+    snprintf(sleepTimeStartString, MAX_SLEEP_TIME_START_STRING_LENGTH, "%d",
+             sleepTimeStartHourSetting);
+  } else {
+    sleepTimeStartString[0] = '\0';
+  }
+  WiFiManagerParameter sleepTimeStart(
+    "sleepTimeStart", "Sleep time hour start (24 hr clock - clear to disable)",
+    sleepTimeStartString, MAX_SLEEP_TIME_START_STRING_LENGTH);
+  wm.addParameter(&sleepTimeStart);
+
+  const size_t MAX_SLEEP_TIME_END_STRING_LENGTH =
+    MAX_SLEEP_TIME_START_STRING_LENGTH;
+  char sleepTimeEndString[MAX_SLEEP_TIME_END_STRING_LENGTH];
+  if (sleepTimeEnabledSetting) {
+    snprintf(sleepTimeEndString, MAX_SLEEP_TIME_END_STRING_LENGTH, "%d",
+             sleepTimeEndHourSetting);
+  } else {
+    sleepTimeEndString[0] = '\0';
+  }
+  WiFiManagerParameter sleepTimeEnd(
+    "sleepTimeEnd", "Sleep time hour end (24 hr clock - clear to disable)",
+    sleepTimeEndString, MAX_SLEEP_TIME_END_STRING_LENGTH);
+  wm.addParameter(&sleepTimeEnd);
+
   char ssid[32];
   char password[64];
   snprintf(ssid, sizeof(ssid), "Weather Station %04X",
@@ -144,6 +171,10 @@ int8_t connectToWiFi(void (*onConfigAPLaunch)(char*, char*, char*)) {
       //      customPrecipitationUnit.getValue(),
       //              MAX_PRECIPITATION_UNIT_LENGTH);
       strncpy(languageSetting, customLanguage.getValue(), MAX_LANGUAGE_LENGTH);
+      sleepTimeEnabledSetting = strlen(sleepTimeStart.getValue()) > 0 &&
+                                strlen(sleepTimeEnd.getValue()) > 0;
+      sleepTimeStartHourSetting = atoi(sleepTimeStart.getValue());
+      sleepTimeEndHourSetting = atoi(sleepTimeEnd.getValue());
       saveSettings();
       printSettings();
       return WIFI_CONNECTION_SUCCESS_CONFIG;

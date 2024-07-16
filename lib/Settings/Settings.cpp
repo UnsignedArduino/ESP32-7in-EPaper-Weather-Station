@@ -40,6 +40,10 @@ const char* LANGUAGES_LABELS[MAX_LANGUAGES] = {"English (en)",
                                                "Traditional Chinese (cn_trad)"};
 char languageSetting[MAX_LANGUAGE_LENGTH] = "en";
 
+bool sleepTimeEnabledSetting = true;
+uint8_t sleepTimeStartHourSetting = 22;
+uint8_t sleepTimeEndHourSetting = 4;
+
 bool saveSettings() {
   Serial.println("Saving settings to preferences");
   Preferences preferences;
@@ -49,6 +53,9 @@ bool saveSettings() {
   //  preferences.putString("windSpeedUnit", windSpeedUnitSetting);
   //  preferences.putString("precipUnit", precipitationUnitSetting);
   preferences.putString("lang", languageSetting);
+  preferences.putBool("STEnabled", sleepTimeEnabledSetting);
+  preferences.putUChar("STStartHour", sleepTimeStartHourSetting);
+  preferences.putUChar("STEndHour", sleepTimeEndHourSetting);
   preferences.end();
   Serial.println("Settings saved");
   return true;
@@ -66,6 +73,9 @@ bool loadSettings() {
   //  preferences.getString("precipUnit", precipitationUnitSetting,
   //                        MAX_PRECIPITATION_UNIT_LENGTH);
   preferences.getString("lang", languageSetting, MAX_LANGUAGE_LENGTH);
+  sleepTimeEnabledSetting = preferences.getBool("STEnabled", true);
+  sleepTimeStartHourSetting = preferences.getUChar("STStartHour", 22);
+  sleepTimeEndHourSetting = preferences.getUChar("STEndHour", 4);
   preferences.end();
   Serial.println("Settings loaded");
   return true;
@@ -78,4 +88,8 @@ void printSettings() {
   //  Serial.printf("  Wind speed unit: %s\n", windSpeedUnitSetting);
   //  Serial.printf("  Precipitation unit: %s\n", precipitationUnitSetting);
   Serial.printf("  Language: %s\n", languageSetting);
+  Serial.printf("  Sleep time enabled: %s\n",
+                sleepTimeEnabledSetting ? "true" : "false");
+  Serial.printf("  Sleep time start hour: %d\n", sleepTimeStartHourSetting);
+  Serial.printf("  Sleep time end hour: %d\n", sleepTimeEndHourSetting);
 }

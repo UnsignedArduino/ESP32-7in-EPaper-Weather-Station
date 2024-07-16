@@ -143,7 +143,7 @@ void displayWeather(GeocodeData& geoData, WeatherData& weatherData) {
   if (accurateTime) {
     snprintf(lastUpdatedBuf, 48, "Last updated at %02d:%02d", hour(), minute());
   } else {
-    snprintf(lastUpdatedBuf, 48, "Last updated  at ??:??");
+    snprintf(lastUpdatedBuf, 48, "Last updated at ??:??");
   }
 
   char batteryBuf[32];
@@ -650,10 +650,25 @@ void setup() {
   gpio_deep_sleep_hold_en();
 
   esp_sleep_enable_ext0_wakeup(FUNCTION_BTN_PIN, 0);
-  Serial.printf("Going to sleep for %d minutes\n",
-                (lastUpdateSuccess ? UPDATE_TIME : RETRY_TIME));
-  esp_sleep_enable_timer_wakeup((lastUpdateSuccess ? UPDATE_TIME : RETRY_TIME) *
-                                60 * 1000000ULL);
+
+  uint32_t targetSleepTime =
+    lastUpdateSuccess ? UPDATE_TIME : RETRY_TIME; // minutes
+  if (sleepTimeEnabledSetting) {
+    if (!lastUpdateSuccess) {
+      Serial.println("Although sleep time is enabled, last update was not a "
+                     "success, so not sleeping for extended time");
+    } else {
+      while (hour(now() + targetSleepTime * 60) >= sleepTimeStartHourSetting ||
+             hour(now() + targetSleepTime * 60) < sleepTimeEndHourSetting) {
+        targetSleepTime += 60;
+      }
+      Serial.printf("Sleep time is enabled, sleeping for %d minutes\n",
+                    targetSleepTime);
+    }
+  }
+
+  Serial.printf("Going to sleep for %d minutes\n", targetSleepTime);
+  esp_sleep_enable_timer_wakeup(targetSleepTime * 60 * 1000000ULL);
   esp_deep_sleep_start();
 }
 

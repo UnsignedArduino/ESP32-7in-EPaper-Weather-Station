@@ -55,11 +55,12 @@ int8_t getWeather(float latitude, float longitude, WeatherData& data) {
   // daily=weather_code,temperature_2m_max,temperature_2m_min&
   // temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&
   // past_days=1
-  client.printf("GET /v1/forecast?"
-                "latitude=%f&longitude=%f&"
-                "current=temperature_2m,relative_humidity_2m,is_day&"
-                "daily=weather_code,temperature_2m_max,temperature_2m_min&",
-                latitude, longitude);
+  client.printf(
+    "GET /v1/forecast?"
+    "latitude=%f&longitude=%f&"
+    "current=temperature_2m,relative_humidity_2m,is_day,weather_code&"
+    "daily=weather_code,temperature_2m_max,temperature_2m_min&",
+    latitude, longitude);
 
   if (strcmp(tempUnitSetting, TEMP_UNIT_FAHRENHEIT) == 0) {
     client.print("temperature_unit=fahrenheit&");
@@ -110,7 +111,7 @@ int8_t getWeather(float latitude, float longitude, WeatherData& data) {
 
   JsonObject current = doc["current"];
   data.currUnixTime = current["time"];
-  data.currWeatherCode = doc["daily"]["weather_code"][0];
+  data.currWeatherCode = doc["current"]["weather_code"];
   data.currTemp = current["temperature_2m"];
   data.currHighTemp = doc["daily"]["temperature_2m_max"][0];
   data.currLowTemp = doc["daily"]["temperature_2m_min"][0];
