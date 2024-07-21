@@ -99,6 +99,15 @@ int8_t connectToWiFi(void (*onConfigAPLaunch)(char*, char*, char*)) {
     "languageID", "Language: (Should be hidden)", "", MAX_LANGUAGE_LENGTH);
   wm.addParameter(&customLanguage);
 
+  const size_t MAX_UPDATE_PERIOD_STRING_LENGTH = 3;
+  char updatePeriodString[MAX_UPDATE_PERIOD_STRING_LENGTH];
+  snprintf(updatePeriodString, MAX_UPDATE_PERIOD_STRING_LENGTH, "%d",
+           updatePeriodSetting / 60);
+  WiFiManagerParameter updatePeriod(
+    "updatePeriod", "How often the weather is updated (hours)",
+    updatePeriodString, MAX_UPDATE_PERIOD_STRING_LENGTH);
+  wm.addParameter(&updatePeriod);
+
   const size_t MAX_SLEEP_TIME_START_STRING_LENGTH = 3;
   char sleepTimeStartString[MAX_SLEEP_TIME_START_STRING_LENGTH];
   if (sleepTimeEnabledSetting) {
@@ -171,6 +180,7 @@ int8_t connectToWiFi(void (*onConfigAPLaunch)(char*, char*, char*)) {
       //      customPrecipitationUnit.getValue(),
       //              MAX_PRECIPITATION_UNIT_LENGTH);
       strncpy(languageSetting, customLanguage.getValue(), MAX_LANGUAGE_LENGTH);
+      updatePeriodSetting = atoi(updatePeriod.getValue()) * 60;
       sleepTimeEnabledSetting = strlen(sleepTimeStart.getValue()) > 0 &&
                                 strlen(sleepTimeEnd.getValue()) > 0;
       sleepTimeStartHourSetting = atoi(sleepTimeStart.getValue());

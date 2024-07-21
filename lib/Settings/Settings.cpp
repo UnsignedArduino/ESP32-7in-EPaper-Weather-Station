@@ -40,6 +40,8 @@ const char* LANGUAGES_LABELS[MAX_LANGUAGES] = {"English (en)",
                                                "Traditional Chinese (cn_trad)"};
 char languageSetting[MAX_LANGUAGE_LENGTH] = "en";
 
+uint16_t updatePeriodSetting = 60;
+
 bool sleepTimeEnabledSetting = true;
 uint8_t sleepTimeStartHourSetting = 22;
 uint8_t sleepTimeEndHourSetting = 4;
@@ -53,6 +55,7 @@ bool saveSettings() {
   //  preferences.putString("windSpeedUnit", windSpeedUnitSetting);
   //  preferences.putString("precipUnit", precipitationUnitSetting);
   preferences.putString("lang", languageSetting);
+  preferences.putUShort("updatePeriod", updatePeriodSetting);
   preferences.putBool("STEnabled", sleepTimeEnabledSetting);
   preferences.putUChar("STStartHour", sleepTimeStartHourSetting);
   preferences.putUChar("STEndHour", sleepTimeEndHourSetting);
@@ -73,6 +76,7 @@ bool loadSettings() {
   //  preferences.getString("precipUnit", precipitationUnitSetting,
   //                        MAX_PRECIPITATION_UNIT_LENGTH);
   preferences.getString("lang", languageSetting, MAX_LANGUAGE_LENGTH);
+  updatePeriodSetting = preferences.getUShort("updatePeriod", 60);
   sleepTimeEnabledSetting = preferences.getBool("STEnabled", true);
   sleepTimeStartHourSetting = preferences.getUChar("STStartHour", 22);
   sleepTimeEndHourSetting = preferences.getUChar("STEndHour", 4);

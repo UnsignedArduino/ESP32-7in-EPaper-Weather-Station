@@ -3,8 +3,7 @@
 
 #include <Arduino.h>
 
-const uint8_t UPDATE_TIME = 60; // minutes
-const uint8_t RETRY_TIME = 15;  // minutes
+const uint8_t RETRY_TIME = 15; // minutes
 const char* NTP_SERVER_1 = "time.nist.gov";
 const char* NTP_SERVER_2 = "pool.ntp.org";
 const char* NTP_SERVER_3 = "time.cloudflare.com";

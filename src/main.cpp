@@ -652,15 +652,17 @@ void setup() {
   esp_sleep_enable_ext0_wakeup(FUNCTION_BTN_PIN, 0);
 
   uint32_t targetSleepTime =
-    lastUpdateSuccess ? UPDATE_TIME : RETRY_TIME; // minutes
+    lastUpdateSuccess ? updatePeriodSetting : RETRY_TIME; // minutes
   if (sleepTimeEnabledSetting) {
     if (!lastUpdateSuccess) {
       Serial.println("Although sleep time is enabled, last update was not a "
                      "success, so not sleeping for extended time");
     } else {
+      // I'm too lazy to figure out the logic for this
+      // Keep adding to the sleep time until it's outside the sleep time range
       while (hour(now() + targetSleepTime * 60) >= sleepTimeStartHourSetting ||
              hour(now() + targetSleepTime * 60) < sleepTimeEndHourSetting) {
-        targetSleepTime += 60;
+        targetSleepTime += 1;
       }
       Serial.printf("Sleep time is enabled, sleeping for %d minutes\n",
                     targetSleepTime);

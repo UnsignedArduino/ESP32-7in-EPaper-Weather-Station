@@ -42,6 +42,8 @@ extern const char* LANGUAGES[MAX_LANGUAGES];
 extern const char* LANGUAGES_LABELS[MAX_LANGUAGES];
 extern char languageSetting[MAX_LANGUAGE_LENGTH];
 
+extern uint16_t updatePeriodSetting;
+
 extern bool sleepTimeEnabledSetting;
 extern uint8_t sleepTimeStartHourSetting;
 extern uint8_t sleepTimeEndHourSetting;
