@@ -96,7 +96,7 @@ void updateBatteryState() {
   Serial.printf("Battery pack voltage after filter input: %f mV\n",
                 batteryVoltage);
 
-  batteryPercent = constrain(map(batteryVoltage, 3900, 4900, 0, 100), 0, 100);
+  batteryPercent = constrain(map(batteryVoltage, 3800, 4800, 0, 100), 0, 100);
   Serial.printf("Battery percentage: %d%%\n", batteryPercent);
 }
 
