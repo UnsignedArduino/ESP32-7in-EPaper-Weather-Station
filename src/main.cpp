@@ -30,6 +30,14 @@ RTC_DATA_ATTR bool lastUpdateSuccess = false;
 RTC_DATA_ATTR uint32_t successUpdates = 0;
 RTC_DATA_ATTR uint32_t failedUpdates = 0;
 
+const uint8_t FAIL_GET_COORDINATE_CONNECTION_FAIL = 1;
+const uint8_t FAIL_GET_COORDINATE_CONNECTION_TIMEOUT = 2;
+const uint8_t FAIL_GET_COORDINATE_PARSE_FAIL = 3;
+const uint8_t FAIL_GET_WEATHER_CONNECTION_FAIL = 4;
+const uint8_t FAIL_GET_WEATHER_CONNECTION_TIMEOUT = 5;
+const uint8_t FAIL_GET_WEATHER_PARSE_FAIL = 6;
+uint8_t failReason = 0;
+
 uint8_t batteryPercent = 0;
 
 bool accurateTime = false;
@@ -572,14 +580,17 @@ void setup() {
       switch (geocodeResult) { // NOLINT(*-multiway-paths-covered)
         case GET_COORDINATE_CONNECTION_FAIL: {
           u8g2.print("Failed to connect to the geocoding API!");
+          failReason = FAIL_GET_COORDINATE_CONNECTION_FAIL;
           break;
         }
         case GET_COORDINATE_CONNECTION_TIMEOUT: {
           u8g2.print("Geocoding API timed out!");
+          failReason = FAIL_GET_COORDINATE_CONNECTION_TIMEOUT;
           break;
         }
         case GET_COORDINATE_PARSE_FAIL: {
           u8g2.print("Failed to parse geocoding API response!");
+          failReason = FAIL_GET_COORDINATE_PARSE_FAIL;
           break;
         }
       }
@@ -608,14 +619,17 @@ void setup() {
       switch (weatherResult) { // NOLINT(*-multiway-paths-covered)
         case GET_WEATHER_CONNECTION_FAIL: {
           u8g2.print("Failed to connect to the weather API!");
+          failReason = FAIL_GET_WEATHER_CONNECTION_FAIL;
           break;
         }
         case GET_WEATHER_CONNECTION_TIMEOUT: {
           u8g2.print("Weather API timed out!");
+          failReason = FAIL_GET_WEATHER_CONNECTION_TIMEOUT;
           break;
         }
         case GET_WEATHER_PARSE_FAIL: {
           u8g2.print("Failed to parse weather API response!");
+          failReason = FAIL_GET_WEATHER_PARSE_FAIL;
           break;
         }
       }
@@ -652,6 +666,45 @@ void setup() {
              failedUpdates);
     Serial.printf("V1 = %s (success / failed updates)\n", tempBuf);
     Blynk.virtualWrite(V1, tempBuf);
+
+    if (!showWeather) {
+      switch (failReason) {
+        case FAIL_GET_COORDINATE_CONNECTION_FAIL: {
+          Blynk.logEvent("failed_refresh",
+                         "FAIL_GET_COORDINATE_CONNECTION_FAIL (1)");
+          break;
+        }
+        case FAIL_GET_COORDINATE_CONNECTION_TIMEOUT: {
+          Blynk.logEvent("failed_refresh",
+                         "FAIL_GET_COORDINATE_CONNECTION_TIMEOUT (2)");
+          break;
+        }
+        case FAIL_GET_COORDINATE_PARSE_FAIL: {
+          Blynk.logEvent("failed_refresh",
+                         "FAIL_GET_COORDINATE_PARSE_FAIL (3)");
+          break;
+        }
+        case FAIL_GET_WEATHER_CONNECTION_FAIL: {
+          Blynk.logEvent("failed_refresh",
+                         "FAIL_GET_WEATHER_CONNECTION_FAIL (4)");
+          break;
+        }
+        case FAIL_GET_WEATHER_CONNECTION_TIMEOUT: {
+          Blynk.logEvent("failed_refresh",
+                         "FAIL_GET_WEATHER_CONNECTION_TIMEOUT (5)");
+          break;
+        }
+        case FAIL_GET_WEATHER_PARSE_FAIL: {
+          Blynk.logEvent("failed_refresh", "FAIL_GET_WEATHER_PARSE_FAIL (6)");
+          break;
+        }
+        default: {
+          Blynk.logEvent("failed_refresh",
+                         String("UNKNOWN (") + failReason + ")");
+          break;
+        }
+      }
+    }
 
     Blynk.run();
     Serial.println("Disconnecting from Blynk");
