@@ -15,9 +15,12 @@ found [here](https://github.com/UnsignedArduino/ESP32-7in-EPaper-Weather-Station
 1. Have PlatformIO installed.
 2. Clone the repository.
 3. Open in a PlatformIO-compatible IDE because I'm too lazy to remember the commands.
-4. Build filesystem image.
-5. Upload filesystem image.
-6. Upload.
+4. Create a Blynk template with a battery percentage (integer from 0 to 100) data stream and widget on virtual pin V0
+   and a success/fail rate (string) data stream and widget on virtual pin V1.
+5. In [`include`](include), rename [`config.sample.h`](include/config.sample.h) to `config.h` and fill in values.
+6. Build filesystem image.
+7. Upload filesystem image.
+8. Upload.
 
 ## Contributing
 

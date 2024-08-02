@@ -18,6 +18,7 @@
 #include "time.h"
 #include "unifont_custom.h"
 #include <Arduino.h>
+#include <BlynkSimpleEsp32.h>
 #include <Button.h>
 #include <LittleFS.h>
 #include <driver/rtc_io.h>
@@ -26,6 +27,8 @@
 Button functionBtn(FUNCTION_BTN_PIN);
 
 RTC_DATA_ATTR bool lastUpdateSuccess = false;
+RTC_DATA_ATTR uint32_t successUpdates = 0;
+RTC_DATA_ATTR uint32_t failedUpdates = 0;
 
 uint8_t batteryPercent = 0;
 
@@ -624,6 +627,35 @@ void setup() {
     }
 
     updateTime(weatherData.utcOffset, weatherData.currUnixTime);
+  }
+
+  if (showWeather) {
+    Serial.println("Successful update!");
+    successUpdates++;
+  } else {
+    Serial.println("Failed update!");
+    failedUpdates++;
+  }
+  Serial.printf("Successful updates: %d\nFailed updates: %d\n", successUpdates,
+                failedUpdates);
+
+  Serial.println("Starting Blynk");
+  Blynk.config(BLYNK_AUTH_TOKEN);
+  if (Blynk.connect()) {
+    Serial.println("Connected to Blynk, sending telemetry!");
+
+    Serial.printf("V0 = %d (battery percent)\n", batteryPercent);
+    Blynk.virtualWrite(V0, batteryPercent);
+
+    char tempBuf[32];
+    snprintf(tempBuf, sizeof(tempBuf), "%d / %d", successUpdates,
+             failedUpdates);
+    Serial.printf("V1 = %s (success / failed updates)\n", tempBuf);
+    Blynk.virtualWrite(V1, tempBuf);
+
+    Blynk.run();
+    Serial.println("Disconnecting from Blynk");
+    Blynk.disconnect();
   }
 
   disconnectFromWiFi();
