@@ -20,7 +20,22 @@ found [here](https://github.com/UnsignedArduino/ESP32-7in-EPaper-Weather-Station
 5. In [`include`](include), rename [`config.sample.h`](include/config.sample.h) to `config.h` and fill in values.
 6. Build filesystem image.
 7. Upload filesystem image.
-8. Upload.
+8. Go to `.platformio\packages\framework-arduinoespressif32\libraries\Update\src\Updater.cpp` and edit the definition
+   for `bool UpdateClass::setMD5(const char* expected_md5)`:
+   ```c++
+   bool UpdateClass::setMD5(const char *expected_md5) {
+     if (strlen(expected_md5) != 32) {
+       return false;
+     }
+     _target_md5 = expected_md5;
+     _target_md5.toLowerCase();  // <-- ADD THIS LINE
+     return true;
+   }
+   ```
+   Although this issue is fixed in
+   the [latest version of the ESP32 Arduino core](https://github.com/espressif/arduino-esp32/blob/master/libraries/Update/src/Updater.cpp#L454),
+   [PlatformIO is stuck with ESP32 Arduino core v2](https://github.com/platformio/platform-espressif32/issues/1225).
+9. Upload.
 
 ## Contributing
 

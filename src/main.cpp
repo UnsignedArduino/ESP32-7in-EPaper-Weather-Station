@@ -20,8 +20,10 @@
 #include <Arduino.h>
 #include <BlynkSimpleEsp32.h>
 #include <Button.h>
+#include <HTTPUpdate.h>
 #include <LittleFS.h>
 #include <driver/rtc_io.h>
+#include <esp_ota_ops.h>
 #include <qrcode.h>
 
 Button functionBtn(FUNCTION_BTN_PIN);
@@ -291,6 +293,74 @@ void printWakeupReason() {
   }
 }
 
+extern "C" bool verifyRollbackLater() {
+  return true;
+}
+
+// https://github.com/espressif/arduino-esp32/issues/7423
+void markFirmwareAsValid() {
+  const esp_partition_t* running = esp_ota_get_running_partition();
+  esp_ota_img_states_t ota_state;
+  if (esp_ota_get_state_partition(running, &ota_state) == ESP_OK) {
+    const char* otaState =
+      ota_state == ESP_OTA_IMG_NEW              ? "ESP_OTA_IMG_NEW"
+      : ota_state == ESP_OTA_IMG_PENDING_VERIFY ? "ESP_OTA_IMG_PENDING_VERIFY"
+      : ota_state == ESP_OTA_IMG_VALID          ? "ESP_OTA_IMG_VALID"
+      : ota_state == ESP_OTA_IMG_INVALID        ? "ESP_OTA_IMG_INVALID"
+      : ota_state == ESP_OTA_IMG_ABORTED        ? "ESP_OTA_IMG_ABORTED"
+                                                : "ESP_OTA_IMG_UNDEFINED";
+    Serial.printf("OTA state: %s\n", otaState);
+
+    if (ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
+      if (esp_ota_mark_app_valid_cancel_rollback() == ESP_OK) {
+        Serial.printf("App is valid, rollback cancelled successfully\n");
+      } else {
+        Serial.printf("Failed to cancel rollback\n");
+      }
+    }
+  } else {
+    Serial.printf("OTA partition has no record in OTA data\n");
+  }
+}
+
+BLYNK_WRITE(InternalPinOTA) {
+  String url = param.asString();
+  Blynk.disconnect();
+  Serial.println("OTA update received, starting!");
+  Serial.printf("URL: %s\n", url.c_str());
+
+  WiFiClient client;
+
+  httpUpdate.onStart([]() { Serial.println("OTA update started"); });
+  httpUpdate.onProgress([](int progress, int total) {
+    Serial.printf("OTA update progress: %d%% (%d / %d bytes)\n",
+                  (progress / (total / 100)), progress, total);
+  });
+  httpUpdate.onEnd([]() { Serial.println("OTA update finished"); });
+  httpUpdate.onError(
+    [](int code) { Serial.printf("OTA update error: %d - %s\n", code); });
+
+  t_httpUpdate_return ret = httpUpdate.update(client, url);
+
+  switch (ret) {
+    case HTTP_UPDATE_FAILED: {
+      Serial.printf("OTA update failed: %d (%s)\n", httpUpdate.getLastError(),
+                    httpUpdate.getLastErrorString().c_str());
+      break;
+    }
+    case HTTP_UPDATE_NO_UPDATES: {
+      Serial.println("OTA update: no updates available");
+      break;
+    }
+    case HTTP_UPDATE_OK: {
+      Serial.println("OTA update successful");
+      Serial.println("Rebooting now!");
+      ESP.restart();
+      break;
+    }
+  }
+}
+
 void fontTest() {
   display.fillScreen(GxEPD_WHITE);
   u8g2.setCursor(0, 0);
@@ -375,6 +445,11 @@ void setup() {
     u8g2.print("Refreshing...");
     u8g2.setCursor(30, 450 - 2);
     u8g2.print("Weather data by Open-Meteo.com");
+    char versionString[16];
+    snprintf(versionString, sizeof(versionString), "v%s",
+             BLYNK_FIRMWARE_VERSION);
+    u8g2.setCursor(800 - 30 - u8g2.getUTF8Width(versionString), 450 - 2);
+    u8g2.print(versionString);
     display.display(false);
   }
 
@@ -416,6 +491,11 @@ void setup() {
       u8g2.print("Refreshing...");
       u8g2.setCursor(30, 450 - 2);
       u8g2.print("Weather data by Open-Meteo.com");
+      char versionString[16];
+      snprintf(versionString, sizeof(versionString), "v%s",
+               BLYNK_FIRMWARE_VERSION);
+      u8g2.setCursor(800 - 30 - u8g2.getUTF8Width(versionString), 450 - 2);
+      u8g2.print(versionString);
       display.display(false);
     }
   }
@@ -525,6 +605,11 @@ void setup() {
       u8g2.print("Refreshing...");
       u8g2.setCursor(30, 450 - 2);
       u8g2.print("Weather data by Open-Meteo.com");
+      char versionString[16];
+      snprintf(versionString, sizeof(versionString), "v%s",
+               BLYNK_FIRMWARE_VERSION);
+      u8g2.setCursor(800 - 30 - u8g2.getUTF8Width(versionString), 450 - 2);
+      u8g2.print(versionString);
       display.display(false);
       break;
     }
@@ -724,6 +809,8 @@ void setup() {
   displayDisablePower();
 
   const uint32_t timeFinishDisplay = millis();
+
+  markFirmwareAsValid();
 
   Serial.println("Timings:");
   Serial.printf("  WiFi connect finished at ms %u\n", timeFinishWiFiConnect);
