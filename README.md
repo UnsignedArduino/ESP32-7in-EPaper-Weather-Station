@@ -7,7 +7,7 @@ from [Open-Meteo](https://open-meteo.com/).
 
 ### Hardware
 
-The world's ugliest KiCad schematic for this project can be
+A KiCad schematic and Fusion 360 design for it's case for this project can be
 found [here](https://github.com/UnsignedArduino/ESP32-7in-EPaper-Weather-Station-Hardware).
 
 ### Software
