@@ -1,5 +1,9 @@
 # ESP32-7in-EPaper-Weather-Station
 
+Software | 
+[Hardware](https://github.com/UnsignedArduino/ESP32-7in-EPaper-Weather-Station-Hardware) |
+[Design](https://github.com/UnsignedArduino/ESP32-7in-EPaper-Weather-Station-Design)
+
 A weather station based on a Firebeetle ESP32 and a 7.5in Waveshare E-paper 
 display. The data is fetched from [Open-Meteo](https://open-meteo.com/).
 
@@ -34,6 +38,8 @@ display. The data is fetched from [Open-Meteo](https://open-meteo.com/).
    [latest version of the ESP32 Arduino core](https://github.com/espressif/arduino-esp32/blob/master/libraries/Update/src/Updater.cpp#L454),
    [PlatformIO is stuck with ESP32 Arduino core v2](https://github.com/platformio/platform-espressif32/issues/1225).
 9. Upload.
+
+![Project preview](preview.jpg)
 
 ## Contributing
 
